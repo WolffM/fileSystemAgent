@@ -140,3 +140,22 @@ dmypy.json
 # Configuration files with secrets
 config.local.yaml
 .env.local
+
+# Test directories and files
+/test_migration/
+/test_duplicate_workflow/
+**/test_*
+G:/test_*
+**/G:/test_*
+staging/
+staging_*/
+**/staging/
+**/staging_*/
+
+# File system operation output
+file_index.db
+file_index.json
+*.index
+duplicate_report_*.json
+duplicate_summary_*.txt
+fingerprints.json
