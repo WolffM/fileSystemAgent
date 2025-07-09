@@ -10,8 +10,14 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-# Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+# Add src directory to path and set up proper import environment
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root / 'src'))
+sys.path.insert(0, str(project_root))
+
+# Add current directory to path for Windows compatibility
+sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path.cwd()))
 
 from duplicate_workflow import DuplicateWorkflowEngine, DuplicateAction
 from media_fingerprinting import MediaFingerprintEngine
