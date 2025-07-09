@@ -1,0 +1,26 @@
+agent:
+  name: "FileSystemAgent"
+  log_level: "INFO"
+  data_dir: "./data"
+  scripts_dir: "./scripts"
+  logs_dir: "./logs"
+
+etl:
+  max_workers: 4
+  chunk_size: 10000
+  supported_formats:
+    - csv
+    - json
+    - xml
+    - parquet
+    - excel
+
+scheduler:
+  enabled: true
+  check_interval: 60
+  max_concurrent_jobs: 2
+
+monitoring:
+  enabled: true
+  metrics_port: 8080
+  health_check_interval: 30
