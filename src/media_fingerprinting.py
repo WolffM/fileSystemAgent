@@ -16,7 +16,7 @@ except ImportError:
     IMAGE_HASHING_AVAILABLE = False
 
 try:
-    import videohash
+    from videohash import VideoHash
     VIDEO_HASHING_AVAILABLE = True
 except ImportError:
     VIDEO_HASHING_AVAILABLE = False
@@ -182,9 +182,10 @@ class MediaFingerprintEngine:
             return None
         
         try:
-            # Use videohash to generate perceptual hash
-            video_hash_value = videohash.compute_hash(str(video_path))
-            return str(video_hash_value)
+            # Use VideoHash class to generate perceptual hash
+            video_hash_obj = VideoHash(path=str(video_path))
+            video_hash_value = str(video_hash_obj)  # This returns the hash string
+            return video_hash_value
             
         except Exception as e:
             self.logger.error(f"Error calculating video hash for {video_path}: {e}")
