@@ -29,6 +29,20 @@ except ImportError:
 try:
     from videohash import VideoHash
     VIDEO_HASHING_AVAILABLE = True
+    
+    # Fix for PIL.Image compatibility issues with newer Pillow versions
+    try:
+        from PIL import Image
+        # Add missing attributes for compatibility
+        if not hasattr(Image, 'ANTIALIAS'):
+            Image.ANTIALIAS = Image.LANCZOS
+        if not hasattr(Image, 'CUBIC'):
+            Image.CUBIC = Image.BICUBIC
+        if not hasattr(Image, 'LINEAR'):
+            Image.LINEAR = Image.BILINEAR
+    except ImportError:
+        pass
+        
 except ImportError:
     VIDEO_HASHING_AVAILABLE = False
 
