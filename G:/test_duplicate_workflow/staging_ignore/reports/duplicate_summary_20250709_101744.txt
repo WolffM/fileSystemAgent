@@ -1,0 +1,29 @@
+Duplicate Detection Summary
+==================================================
+Scan Date: 2025-07-09 10:17:44.825970
+Source Path: G:/test_duplicate_workflow/source
+Destination Path: G:/test_duplicate_workflow/destination
+Staging Path: G:/test_duplicate_workflow/staging_ignore
+
+File Counts:
+  Source Files: 4
+  Destination Files: 2
+  Duplicate Matches: 2
+  Duplicate Percentage: 50.0%
+
+Actions Taken:
+  Files Ignored: 2
+  Files Staged: 0
+  Files Processed Normally: 2
+
+Duplicate Matches:
+  1. image1.jpg
+     vs image1.jpg
+     Similarity: 1.000 (exact)
+     Action: DuplicateAction.IGNORE_NEW
+
+  2. image2.png
+     vs image2_copy.png
+     Similarity: 1.000 (exact)
+     Action: DuplicateAction.IGNORE_NEW
+

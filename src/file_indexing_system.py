@@ -9,10 +9,16 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 
-from .template_models import (
-    FileMetadata, FileIndex, DuplicateGroup, DuplicateReport, 
-    HashAlgorithm, IndexingMode
-)
+try:
+    from .template_models import (
+        FileMetadata, FileIndex, DuplicateGroup, DuplicateReport, 
+        HashAlgorithm, IndexingMode
+    )
+except ImportError:
+    from template_models import (
+        FileMetadata, FileIndex, DuplicateGroup, DuplicateReport, 
+        HashAlgorithm, IndexingMode
+    )
 
 
 class FileIndexingSystem:
