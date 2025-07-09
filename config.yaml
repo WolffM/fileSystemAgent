@@ -24,3 +24,24 @@ monitoring:
   enabled: true
   metrics_port: 8080
   health_check_interval: 30
+
+mcp:
+  enabled: false
+  security_mode: "strict"  # strict, permissive
+  max_file_size: 104857600  # 100MB
+  allowed_paths:
+    - "./data"
+    - "./scripts"
+    - "./logs"
+    - "./config.yaml"
+  allowed_commands:
+    - "python"
+    - "pip"
+    - "git"
+    - "curl"
+    - "wget"
+    - "ls"
+    - "cat"
+    - "grep"
+    - "find"
+  server_command: ["python", "-m", "src.mcp_server"]

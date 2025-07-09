@@ -7,16 +7,19 @@ from pathlib import Path
 from typing import Optional
 
 from .agent import FileSystemAgent
+from .agent_mcp import MCPFileSystemAgent
 from .models import ETLJob, ScheduledJob, ETLOperationType, ScheduleType
 
 
 @click.group()
 @click.option('--config', '-c', default='config.yaml', help='Configuration file path')
+@click.option('--mcp/--no-mcp', default=None, help='Enable/disable MCP mode')
 @click.pass_context
-def cli(ctx, config):
+def cli(ctx, config, mcp):
     """FileSystem Agent CLI"""
     ctx.ensure_object(dict)
     ctx.obj['config'] = config
+    ctx.obj['mcp'] = mcp
 
 
 @cli.command()
@@ -24,9 +27,24 @@ def cli(ctx, config):
 def start(ctx):
     """Start the FileSystem Agent"""
     config_path = ctx.obj['config']
+    use_mcp = ctx.obj.get('mcp')
     
     async def run_agent():
-        agent = FileSystemAgent(config_path)
+        # Determine which agent to use
+        if use_mcp is True:
+            agent = MCPFileSystemAgent(config_path)
+        elif use_mcp is False:
+            agent = FileSystemAgent(config_path)
+        else:
+            # Check config file for MCP setting
+            from .config import ConfigManager
+            config_manager = ConfigManager(config_path)
+            mcp_config = config_manager.get_section('mcp')
+            if mcp_config.get('enabled', False):
+                agent = MCPFileSystemAgent(config_path)
+            else:
+                agent = FileSystemAgent(config_path)
+        
         await agent.start()
     
     asyncio.run(run_agent())
@@ -185,7 +203,8 @@ def monitor():
 
 
 @monitor.command()
-def status():
+@click.pass_context
+def status(ctx):
     """Show agent status"""
     click.echo("Agent Status:")
     click.echo("=============")
@@ -194,6 +213,25 @@ def status():
     click.echo("Uptime: 1h 30m")
     click.echo("CPU: 25%")
     click.echo("Memory: 512MB")
+    
+    # Show MCP status if enabled
+    use_mcp = ctx.obj.get('mcp')
+    if use_mcp is True:
+        click.echo("\nMCP Status:")
+        click.echo("MCP: Enabled (CLI override)")
+    elif use_mcp is False:
+        click.echo("\nMCP Status:")
+        click.echo("MCP: Disabled (CLI override)")
+    else:
+        from .config import ConfigManager
+        config_manager = ConfigManager(ctx.obj['config'])
+        mcp_config = config_manager.get_section('mcp')
+        if mcp_config.get('enabled', False):
+            click.echo("\nMCP Status:")
+            click.echo("MCP: Enabled (config)")
+        else:
+            click.echo("\nMCP Status:")
+            click.echo("MCP: Disabled (config)")
 
 
 @monitor.command()

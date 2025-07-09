@@ -17,6 +17,8 @@ pip install -r requirements.txt
 ### Running the Agent
 ```bash
 python main.py start                    # Start the full agent
+python main.py --mcp start              # Start with MCP enabled
+python main.py --no-mcp start           # Start with MCP disabled
 python main.py --help                   # Show all CLI commands
 ```
 
@@ -38,11 +40,18 @@ python main.py schedule disable <job_id> # Disable job
 
 ### Monitoring
 ```bash
-python main.py monitor status           # Agent status
+python main.py monitor status           # Agent status (shows MCP status)
 python main.py monitor metrics          # System metrics
 python main.py monitor alerts           # Active alerts
 curl http://localhost:8080/health        # Health check endpoint
 curl http://localhost:8080/metrics       # REST API metrics
+```
+
+### MCP Operations
+```bash
+python -m src.mcp_server                # Run MCP server standalone
+python main.py --mcp start              # Start agent with MCP enabled
+python main.py --no-mcp start           # Start agent with MCP disabled
 ```
 
 ### Configuration
@@ -82,6 +91,15 @@ Configuration is managed through a hierarchical system:
 - Base config in `config.yaml`
 - Environment variables with `FSA_` prefix override config
 - ConfigManager handles merging and validation via Pydantic models
+- MCP can be enabled/disabled via CLI flags or config file
+
+### MCP Integration
+
+The agent supports Model Context Protocol (MCP) for enhanced security and cross-platform compatibility:
+- **MCP Server**: Provides secure file system operations and command execution
+- **MCP Client**: Integrates with ETL engine and scheduler for controlled operations
+- **Security**: Path restrictions, command allowlists, and file size limits
+- **Cross-Platform**: Abstracts WSL/Windows differences through standardized protocol
 
 ### Job State Management
 
