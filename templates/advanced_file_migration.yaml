@@ -1,0 +1,114 @@
+# Advanced File Migration Template Configuration
+# This template handles complex file operations with comprehensive filtering and indexing
+
+template_name: "Advanced File Migration"
+template_version: "1.0"
+description: "Advanced file migration with comprehensive filtering, duplicate detection, and full indexing"
+
+# Multiple path mappings for complex scenarios
+path_mappings:
+  - source_path: "/source/documents/**/*.pdf"
+    destination_path: "/backup/documents/pdf"
+    preserve_structure: true
+    create_directories: true
+  - source_path: "/source/images"
+    destination_path: "/backup/images"
+    preserve_structure: true
+    create_directories: true
+  - source_path: "/source/projects/*/important/*"
+    destination_path: "/backup/critical"
+    preserve_structure: false
+    create_directories: true
+
+# File operation type
+operation: "copy"
+
+# Advanced conflict resolution
+conflict_resolution: "backup"  # Creates backup before overwriting
+
+# Comprehensive file filtering
+file_filter:
+  include_patterns: 
+    - "*.pdf"
+    - "*.docx"
+    - "*.xlsx"
+    - "*.pptx"
+    - "*.jpg"
+    - "*.jpeg"
+    - "*.png"
+    - "*.gif"
+    - "*.tiff"
+    - "*.py"
+    - "*.js"
+    - "*.ts"
+    - "*.md"
+  exclude_patterns:
+    - "*.tmp"
+    - "*.log"
+    - "*.cache"
+    - "*~"
+    - ".DS_Store"
+    - "Thumbs.db"
+    - "*.pyc"
+    - "__pycache__"
+    - "node_modules"
+    - ".git"
+    - ".svn"
+  min_size: 1024      # 1KB minimum
+  max_size: 104857600 # 100MB maximum
+  min_age: null       # No minimum age
+  max_age: 7776000    # 90 days maximum (in seconds)
+  file_extensions: 
+    - "pdf"
+    - "docx"
+    - "xlsx"
+    - "pptx"
+    - "jpg"
+    - "jpeg"
+    - "png"
+    - "gif"
+    - "tiff"
+    - "py"
+    - "js"
+    - "ts"
+    - "md"
+  ignore_hidden: true
+  ignore_system: true
+
+# Full indexing with hashing
+indexing_mode: "full"  # Includes hash and full metadata
+hash_algorithm: "sha256"
+verify_integrity: true
+index_output_path: "/backup/indexes/migration_index.json"
+
+# Performance optimizations
+batch_size: 500     # Smaller batches for better memory management
+max_workers: 8      # More workers for better parallelism
+memory_limit: 2048  # 2GB memory limit
+
+# Robust error handling
+max_retries: 5
+retry_delay: 2.0
+continue_on_error: true
+
+# Advanced options
+preserve_timestamps: true
+preserve_permissions: true
+dry_run: false
+validate_sources: true
+validate_destinations: true
+
+# Detailed logging
+log_level: "DEBUG"
+detailed_logging: true
+progress_callback: true
+
+# Custom parameters for specific use cases
+custom_parameters:
+  backup_rotation_days: 30
+  compression_enabled: false
+  encryption_enabled: false
+  notification_email: "admin@example.com"
+  priority_extensions: ["pdf", "docx"]
+  skip_large_files: true
+  large_file_threshold: 52428800  # 50MB

@@ -1,0 +1,59 @@
+# Basic File Migration Template Configuration
+# This template handles simple file copying with basic filtering
+
+template_name: "Basic File Migration"
+template_version: "1.0"
+description: "Simple file migration with basic filtering and integrity verification"
+
+# Path mappings - source to destination
+path_mappings:
+  - source_path: "/path/to/source"
+    destination_path: "/path/to/destination"
+    preserve_structure: true
+    create_directories: true
+
+# File operation type
+operation: "copy"  # copy, move, link, symlink
+
+# Conflict resolution strategy
+conflict_resolution: "skip"  # skip, overwrite, rename, backup, fail
+
+# File filtering
+file_filter:
+  include_patterns: []  # e.g., ["*.txt", "*.pdf"]
+  exclude_patterns: ["*.tmp", "*.log"]
+  min_size: 1024  # 1KB minimum
+  max_size: null  # No maximum
+  min_age: null   # No minimum age
+  max_age: null   # No maximum age
+  file_extensions: []  # Empty means all extensions
+  ignore_hidden: true
+  ignore_system: true
+
+# Hashing and indexing
+indexing_mode: "basic"  # none, basic, full, content
+hash_algorithm: "sha256"
+verify_integrity: true
+index_output_path: null  # Will generate default path
+
+# Performance settings
+batch_size: 1000
+max_workers: 4
+memory_limit: null
+
+# Error handling
+max_retries: 3
+retry_delay: 1.0
+continue_on_error: true
+
+# Options
+preserve_timestamps: true
+preserve_permissions: true
+dry_run: false
+validate_sources: true
+validate_destinations: true
+
+# Logging
+log_level: "INFO"
+detailed_logging: false
+progress_callback: true

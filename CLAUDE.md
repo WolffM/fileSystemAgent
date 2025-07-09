@@ -146,6 +146,50 @@ Scheduled scripts receive job context via environment variables:
 
 Currently no test framework is configured. When adding tests, check if pytest or unittest is preferred and update this section with test commands.
 
+## ETL Template System
+
+The agent includes a comprehensive template system for file migration and duplicate detection:
+
+### Template Usage
+```bash
+# Create migration from template
+python -c "
+from src.file_migration_template import create_file_migration_template
+template = create_file_migration_template(
+    source_paths=['/source/path'],
+    destination_path='/dest/path',
+    operation='copy',
+    dry_run=True
+)
+result = template.execute()
+print(f'Status: {result.status}')
+"
+
+# Use YAML template
+python scripts/template_examples/basic_migration_example.py
+
+# Duplicate detection
+python scripts/template_examples/duplicate_detection_example.py
+```
+
+### Template Architecture
+- **Template Models**: Pydantic models for configuration validation
+- **Base Template**: Abstract base class with common functionality
+- **File Migration**: Concrete template for file operations
+- **Indexing System**: SQLite-backed file indexing with hash storage
+- **Duplicate Detection**: Content-based duplicate identification
+
+### Template Components
+1. **Configuration**: YAML-based configuration with validation
+2. **Path Mappings**: Flexible source-to-destination mapping
+3. **File Filtering**: Pattern-based inclusion/exclusion
+4. **Operations**: Copy, move, link, symlink operations
+5. **Conflict Resolution**: Skip, overwrite, rename, backup strategies
+6. **Indexing**: None, basic, full, content indexing modes
+7. **Hashing**: MD5, SHA1, SHA256, SHA512 algorithms
+8. **Progress Tracking**: Real-time operation progress
+9. **Error Handling**: Retry logic with exponential backoff
+
 ## Environment Variables
 
 Configuration can be overridden using `FSA_` prefixed environment variables:

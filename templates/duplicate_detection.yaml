@@ -1,0 +1,94 @@
+# Duplicate Detection and Cleanup Template
+# This template focuses on finding and managing duplicate files
+
+template_name: "Duplicate Detection & Cleanup"
+template_version: "1.0"
+description: "Comprehensive duplicate file detection with optional cleanup actions"
+
+# Path mappings for duplicate scanning
+path_mappings:
+  - source_path: "/data/user_files"
+    destination_path: "/data/duplicates_found"
+    preserve_structure: true
+    create_directories: true
+
+# Operation type - for duplicates, we typically want to move or link
+operation: "move"  # Move duplicates to separate location
+
+# Conflict resolution for duplicate handling
+conflict_resolution: "rename"  # Rename conflicts to avoid data loss
+
+# Comprehensive filtering to find all file types
+file_filter:
+  include_patterns: ["*"]  # Include all files
+  exclude_patterns: 
+    - "*.tmp"
+    - "*.log"
+    - "*.cache"
+    - ".DS_Store"
+    - "Thumbs.db"
+    - "*.lnk"
+    - "*.url"
+  min_size: 4096      # 4KB minimum (skip very small files)
+  max_size: null      # No maximum size limit
+  min_age: null
+  max_age: null
+  file_extensions: [] # All extensions
+  ignore_hidden: false  # Include hidden files in duplicate check
+  ignore_system: true
+
+# Full indexing with content hashing for duplicate detection
+indexing_mode: "full"
+hash_algorithm: "sha256"  # Most reliable for duplicate detection
+verify_integrity: true
+index_output_path: "/data/duplicate_analysis/index.json"
+
+# Performance settings optimized for hashing
+batch_size: 100     # Smaller batches for memory efficiency during hashing
+max_workers: 4      # Conservative worker count for disk I/O
+memory_limit: 1024  # 1GB memory limit
+
+# Robust error handling for large file operations
+max_retries: 3
+retry_delay: 1.0
+continue_on_error: true
+
+# Preserve file attributes
+preserve_timestamps: true
+preserve_permissions: true
+
+# Validation and safety
+dry_run: true  # Default to dry run for safety
+validate_sources: true
+validate_destinations: true
+
+# Detailed logging for duplicate analysis
+log_level: "INFO"
+detailed_logging: true
+progress_callback: true
+
+# Custom parameters for duplicate handling
+custom_parameters:
+  # Duplicate detection settings
+  min_duplicate_size: 4096  # Only consider files >= 4KB as duplicates
+  keep_oldest: true         # Keep oldest file, remove newer duplicates
+  keep_in_priority_dirs: 
+    - "/data/user_files/important"
+    - "/data/user_files/archive"
+  
+  # Cleanup actions
+  create_duplicate_report: true
+  report_path: "/data/duplicate_analysis/duplicate_report.json"
+  move_duplicates_to_trash: false
+  create_hardlinks: false  # Create hardlinks instead of copies
+  
+  # Safety settings
+  require_confirmation: true
+  backup_before_delete: true
+  backup_location: "/data/backups/duplicates"
+  
+  # Analysis options
+  group_by_content: true
+  analyze_similar_names: true
+  check_different_extensions: true
+  minimum_matches: 2  # Minimum files needed to consider as duplicate group
