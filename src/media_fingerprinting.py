@@ -27,7 +27,10 @@ try:
 except ImportError:
     OPENCV_AVAILABLE = False
 
-from .template_models import HashAlgorithm
+try:
+    from .template_models import HashAlgorithm
+except ImportError:
+    from template_models import HashAlgorithm
 
 
 @dataclass

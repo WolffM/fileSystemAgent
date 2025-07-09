@@ -8,9 +8,15 @@ from datetime import datetime
 from enum import Enum
 import logging
 
-from .media_fingerprinting import MediaFingerprintEngine, MediaFingerprint
-from .file_indexing_system import FileIndexingSystem
-from .template_models import HashAlgorithm
+try:
+    from .media_fingerprinting import MediaFingerprintEngine, MediaFingerprint
+    from .file_indexing_system import FileIndexingSystem
+    from .template_models import HashAlgorithm
+except ImportError:
+    # Fallback for direct execution
+    from media_fingerprinting import MediaFingerprintEngine, MediaFingerprint
+    from file_indexing_system import FileIndexingSystem
+    from template_models import HashAlgorithm
 
 
 class DuplicateAction(str, Enum):
