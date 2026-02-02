@@ -2,7 +2,8 @@ import os
 import json
 import csv
 import pandas as pd
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
+from xml.etree.ElementTree import Element
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor
@@ -163,7 +164,7 @@ class MCPETLEngine:
             with open(file_path, 'r') as f:
                 return json.load(f)
     
-    async def _read_xml(self, file_path: Path, params: Dict[str, Any]) -> ET.Element:
+    async def _read_xml(self, file_path: Path, params: Dict[str, Any]) -> Element:
         """Read XML file"""
         if self.use_mcp and self.mcp_client:
             content = await self.mcp_client.read_file(str(file_path))
