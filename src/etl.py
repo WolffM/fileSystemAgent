@@ -2,7 +2,8 @@ import os
 import json
 import csv
 import pandas as pd
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
+from xml.etree.ElementTree import Element
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor
@@ -130,7 +131,7 @@ class ETLEngine:
         with open(file_path, 'r') as f:
             return json.load(f)
     
-    def _read_xml(self, file_path: Path, params: Dict[str, Any]) -> ET.Element:
+    def _read_xml(self, file_path: Path, params: Dict[str, Any]) -> Element:
         """Read XML file"""
         tree = ET.parse(file_path)
         return tree.getroot()
