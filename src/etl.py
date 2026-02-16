@@ -1,12 +1,12 @@
 import os
 import json
-import csv
+import subprocess
+import sys
 import pandas as pd
 import defusedxml.ElementTree as ET
 from xml.etree.ElementTree import Element
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
-from concurrent.futures import ThreadPoolExecutor
 import logging
 from datetime import datetime
 
@@ -176,24 +176,49 @@ class ETLEngine:
                     json.dump(data, f, indent=2)
     
     def _execute_transform_script(self, data: Any, script_path: str, params: Dict[str, Any]) -> Any:
-        """Execute transformation script"""
+        """Execute transformation script in a subprocess for isolation"""
         script_file = Path(script_path)
         if not script_file.exists():
             raise FileNotFoundError(f"Transform script not found: {script_path}")
-        
-        # Create a safe execution environment
-        namespace = {
-            'data': data,
-            'params': params,
-            'pd': pd,
-            'json': json,
-            'datetime': datetime
-        }
-        
-        with open(script_file, 'r') as f:
-            script_content = f.read()
-        
-        exec(script_content, namespace)
-        
-        # Return the transformed data
-        return namespace.get('result', data)
+
+        # Write data to a temp file for the subprocess
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as data_file:
+            if isinstance(data, pd.DataFrame):
+                data.to_json(data_file.name, orient='records')
+            else:
+                json.dump(data, data_file)
+            data_path = data_file.name
+
+        result_path = data_path + '.result'
+
+        try:
+            # Run transform script as subprocess with data paths as env vars
+            env = {
+                **dict(os.environ),
+                'TRANSFORM_DATA_PATH': data_path,
+                'TRANSFORM_RESULT_PATH': result_path,
+                'TRANSFORM_PARAMS': json.dumps(params),
+            }
+
+            result = subprocess.run(
+                [sys.executable, str(script_file)],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Transform script failed: {result.stderr}")
+
+            # Read result if the script wrote one
+            if Path(result_path).exists():
+                with open(result_path, 'r') as f:
+                    return json.load(f)
+
+            return data
+
+        finally:
+            Path(data_path).unlink(missing_ok=True)
+            Path(result_path).unlink(missing_ok=True)

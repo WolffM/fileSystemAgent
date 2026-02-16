@@ -1,9 +1,8 @@
-import os
 import hashlib
 import mimetypes
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
-from dataclasses import dataclass
+from typing import Dict, List, Optional
+from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 
@@ -36,12 +35,6 @@ except ImportError:
     VIDEO_HASHING_AVAILABLE = False
 
 try:
-    import cv2
-    OPENCV_AVAILABLE = True
-except ImportError:
-    OPENCV_AVAILABLE = False
-
-try:
     from .template_models import HashAlgorithm
 except ImportError:
     from template_models import HashAlgorithm
@@ -68,7 +61,7 @@ class MediaFingerprint:
     video_hash: Optional[str] = None
     
     # Metadata
-    created_at: datetime = datetime.now()
+    created_at: datetime = field(default_factory=datetime.now)
     error_message: Optional[str] = None
 
 

@@ -75,7 +75,7 @@ class FileSystemAgent:
     def _signal_handler(self, signum, frame):
         """Handle system signals"""
         self.logger.info(f"Received signal {signum}, shutting down...")
-        asyncio.create_task(self.stop())
+        self.is_running = False
     
     async def start(self):
         """Start the FileSystem Agent"""

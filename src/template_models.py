@@ -1,9 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, validator
-from pathlib import Path
-import hashlib
+from pydantic import BaseModel, Field, field_validator
 
 
 class HashAlgorithm(str, Enum):
@@ -55,7 +53,8 @@ class PathMapping(BaseModel):
     preserve_structure: bool = Field(True, description="Preserve directory structure")
     create_directories: bool = Field(True, description="Create destination directories")
     
-    @validator('source_path', 'destination_path')
+    @field_validator('source_path', 'destination_path')
+    @classmethod
     def validate_paths(cls, v):
         if not v.strip():
             raise ValueError("Path cannot be empty")
@@ -160,13 +159,15 @@ class ETLTemplateConfig(BaseModel):
     # Custom Parameters
     custom_parameters: Dict[str, Any] = Field(default_factory=dict, description="Custom template parameters")
     
-    @validator('batch_size', 'max_workers', 'max_retries')
+    @field_validator('batch_size', 'max_workers', 'max_retries')
+    @classmethod
     def validate_positive_integers(cls, v):
         if v <= 0:
             raise ValueError("Value must be positive")
         return v
-    
-    @validator('retry_delay')
+
+    @field_validator('retry_delay')
+    @classmethod
     def validate_retry_delay(cls, v):
         if v < 0:
             raise ValueError("Retry delay cannot be negative")

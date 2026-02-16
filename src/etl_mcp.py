@@ -1,12 +1,12 @@
 import os
 import json
-import csv
+import asyncio
+import sys
 import pandas as pd
 import defusedxml.ElementTree as ET
 from xml.etree.ElementTree import Element
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
-from concurrent.futures import ThreadPoolExecutor
 import logging
 from datetime import datetime
 
@@ -245,41 +245,52 @@ class MCPETLEngine:
                         f.write(content)
     
     async def _execute_transform_script(self, data: Any, script_path: str, params: Dict[str, Any]) -> Any:
-        """Execute transformation script"""
+        """Execute transformation script in a subprocess for isolation"""
         if not await self._file_exists(script_path):
             raise FileNotFoundError(f"Transform script not found: {script_path}")
-        
-        # Read script content
-        if self.use_mcp and self.mcp_client:
-            script_content = await self.mcp_client.read_file(script_path)
-        else:
-            with open(script_path, 'r') as f:
-                script_content = f.read()
-        
-        # Create a safe execution environment
-        namespace = {
-            'data': data,
-            'params': params,
-            'pd': pd,
-            'json': json,
-            'datetime': datetime
-        }
-        
-        exec(script_content, namespace)
-        
-        # Return the transformed data
-        return namespace.get('result', data)
-    
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as data_file:
+            if isinstance(data, pd.DataFrame):
+                data.to_json(data_file.name, orient='records')
+            else:
+                json.dump(data, data_file)
+            data_path = data_file.name
+
+        result_path = data_path + '.result'
+
+        try:
+            env = {
+                **dict(os.environ),
+                'TRANSFORM_DATA_PATH': data_path,
+                'TRANSFORM_RESULT_PATH': result_path,
+                'TRANSFORM_PARAMS': json.dumps(params),
+            }
+
+            process = await asyncio.create_subprocess_exec(
+                sys.executable, str(script_path),
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=300)
+
+            if process.returncode != 0:
+                raise RuntimeError(f"Transform script failed: {stderr.decode()}")
+
+            if Path(result_path).exists():
+                with open(result_path, 'r') as f:
+                    return json.load(f)
+
+            return data
+
+        finally:
+            Path(data_path).unlink(missing_ok=True)
+            Path(result_path).unlink(missing_ok=True)
+
     async def _file_exists(self, path: str) -> bool:
         """Check if file exists"""
         if self.use_mcp and self.mcp_client:
             return await self.mcp_client.file_exists(path)
         else:
             return Path(path).exists()
-    
-    async def _is_directory(self, path: str) -> bool:
-        """Check if path is directory"""
-        if self.use_mcp and self.mcp_client:
-            return await self.mcp_client.is_directory(path)
-        else:
-            return Path(path).is_dir()

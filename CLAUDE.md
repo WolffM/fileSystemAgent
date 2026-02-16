@@ -2,6 +2,36 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Goals
+
+This repo serves as a **Windows system maintenance and file management agent** with two primary missions:
+
+### Goal 1: Security & Process Hygiene
+Active scanning and detection of:
+- **Malware**: Suspicious executables, known malware signatures, anomalous behavior
+- **Stale processes**: Long-running or zombie processes consuming resources unnecessarily
+- **Orphaned daemons**: Services/daemons left running after their parent exited
+- **Spyware**: Programs with suspicious network activity, keyloggers, data exfiltration
+- **High resource consumption**: Processes hogging CPU, memory, disk I/O, or network
+
+### Goal 2: File Organization & Storage Reclamation
+Comprehensive file system management:
+- **File organization**: Cataloguing, categorization, and structured storage
+- **Duplicate detection**: Content-based deduplication (hash, perceptual, media fingerprint)
+- **Compression**: Identifying and compressing compressible files/directories
+- **Pruning**: Removing temp files, caches, logs, and other reclaimable space
+- **Indexing**: Fast SQLite-backed file metadata and content indexing
+
+### Design Principles
+- **Leverage 3rd-party tools** wherever possible (psutil, yara, ClamAV, rkhunter, WinDirStat, etc.) — avoid reinventing the wheel
+- **One-time scripts first**: Build standalone diagnostic/cataloguing scripts before integrating into the agent framework
+- **Cross-platform awareness**: Developed in WSL, tested on Windows native
+- **Safety first**: Dry-run by default, explicit confirmation for destructive operations
+
+### Phase 1: One-Time Diagnostic Scripts
+1. **System Catalogue Script**: Enumerate all running processes, installed programs, services, startup items, scheduled tasks, and collect system/application/security logs
+2. **File Index Script**: Scan drives for large files, old/stale files, temp files, duplicate candidates, and generate a report of reclaimable space
+
 ## Common Commands
 
 ### Development Setup

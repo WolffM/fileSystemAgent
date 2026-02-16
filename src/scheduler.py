@@ -1,11 +1,11 @@
 import os
+import json
 import asyncio
 import logging
 import subprocess
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
-import schedule
 from croniter import croniter
 
 from .models import ScheduledJob, ScheduleType, JobStatus
@@ -104,6 +104,10 @@ class JobScheduler:
         for job_id, process in self.running_jobs.items():
             if process.poll() is None:
                 process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
                 self.logger.info(f"Terminated job: {job_id}")
     
     async def _check_and_run_jobs(self):
@@ -148,7 +152,7 @@ class JobScheduler:
                 **dict(os.environ),
                 'JOB_ID': job.id,
                 'JOB_NAME': job.name,
-                'JOB_PARAMS': str(job.parameters)
+                'JOB_PARAMS': json.dumps(job.parameters)
             }
             
             # Execute the script

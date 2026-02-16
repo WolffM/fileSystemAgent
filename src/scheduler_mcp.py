@@ -1,8 +1,9 @@
 import os
+import json
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pathlib import Path
 from croniter import croniter
 
@@ -188,13 +189,13 @@ class MCPJobScheduler:
         except Exception as e:
             self.logger.error(f"Failed to execute job {job.id}: {e}")
     
-    async def _execute_script_mcp(self, job: ScheduledJob, script_path: Path) -> Dict[str, any]:
+    async def _execute_script_mcp(self, job: ScheduledJob, script_path: Path) -> Dict[str, Any]:
         """Execute script using MCP"""
         # Prepare environment variables
         env_vars = {
             'JOB_ID': job.id,
             'JOB_NAME': job.name,
-            'JOB_PARAMS': str(job.parameters)
+            'JOB_PARAMS': json.dumps(job.parameters)
         }
         
         # For MCP execution, we need to set environment variables in the current process
@@ -223,7 +224,7 @@ class MCPJobScheduler:
                 else:
                     os.environ[key] = value
     
-    async def _execute_script_direct(self, job: ScheduledJob, script_path: Path) -> Dict[str, any]:
+    async def _execute_script_direct(self, job: ScheduledJob, script_path: Path) -> Dict[str, Any]:
         """Execute script directly using subprocess"""
         import subprocess
         
@@ -232,7 +233,7 @@ class MCPJobScheduler:
             **dict(os.environ),
             'JOB_ID': job.id,
             'JOB_NAME': job.name,
-            'JOB_PARAMS': str(job.parameters)
+            'JOB_PARAMS': json.dumps(job.parameters)
         }
         
         # Create subprocess

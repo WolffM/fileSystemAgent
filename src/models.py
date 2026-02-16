@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class JobStatus(str, Enum):
@@ -68,5 +68,4 @@ class AgentConfig(BaseModel):
     scripts_dir: str
     logs_dir: str
     
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")

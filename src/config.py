@@ -2,8 +2,6 @@ import os
 import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
-
 from .models import AgentConfig
 
 
@@ -88,7 +86,7 @@ class ConfigManager:
         if self.config is None:
             return
         
-        config_dict = self.config.dict()
+        config_dict = self.config.model_dump()
         
         with open(self.config_path, 'w') as f:
             yaml.dump(config_dict, f, default_flow_style=False)

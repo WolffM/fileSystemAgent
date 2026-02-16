@@ -1,11 +1,11 @@
 import logging
 import psutil
 import time
-from datetime import datetime, timedelta
+import threading
+from datetime import datetime
 from typing import Dict, List, Optional
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 import uvicorn
 from pydantic import BaseModel
 
@@ -39,7 +39,8 @@ class MonitoringService:
         self.scheduled_jobs: Dict[str, ScheduledJob] = {}
         self.events: List[FileSystemEvent] = []
         self.is_running = False
-        
+        self.start_time = time.time()
+
         self._setup_routes()
     
     def _setup_routes(self):
@@ -60,13 +61,13 @@ class MonitoringService:
         @self.app.get("/jobs")
         async def get_jobs():
             return {
-                "etl_jobs": [job.dict() for job in self.job_history[-50:]],
-                "scheduled_jobs": [job.dict() for job in self.scheduled_jobs.values()]
+                "etl_jobs": [job.model_dump() for job in self.job_history[-50:]],
+                "scheduled_jobs": [job.model_dump() for job in self.scheduled_jobs.values()]
             }
         
         @self.app.get("/events")
         async def get_events():
-            return [event.dict() for event in self.events[-100:]]
+            return [event.model_dump() for event in self.events[-100:]]
         
         @self.app.get("/status")
         async def get_status():
@@ -74,7 +75,7 @@ class MonitoringService:
                 "agent_status": "running" if self.is_running else "stopped",
                 "system_metrics": self.get_system_metrics(),
                 "job_metrics": self.get_job_metrics(),
-                "uptime": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+                "uptime": time.time() - self.start_time
             }
     
     def get_system_metrics(self) -> SystemMetrics:
@@ -181,8 +182,6 @@ class MonitoringService:
     
     def _start_metrics_collection(self):
         """Start collecting system metrics"""
-        import threading
-        
         def collect_metrics():
             while self.is_running:
                 try:

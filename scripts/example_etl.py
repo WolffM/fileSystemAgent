@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Example ETL transformation script
-This script demonstrates how to create a transformation script for the FileSystem Agent
+Example ETL transformation script.
+
+Transform scripts receive data via environment variables:
+  TRANSFORM_DATA_PATH  - Path to JSON file containing input data
+  TRANSFORM_RESULT_PATH - Path to write JSON result to
+  TRANSFORM_PARAMS - JSON-encoded parameters
 """
 import os
 import sys
@@ -9,44 +13,40 @@ import json
 import pandas as pd
 from datetime import datetime
 
-# Get job parameters from environment
-job_id = os.environ.get('JOB_ID', 'unknown')
-job_name = os.environ.get('JOB_NAME', 'unknown')
-job_params = json.loads(os.environ.get('JOB_PARAMS', '{}'))
+data_path = os.environ.get('TRANSFORM_DATA_PATH')
+result_path = os.environ.get('TRANSFORM_RESULT_PATH')
+params = json.loads(os.environ.get('TRANSFORM_PARAMS', '{}'))
 
-print(f"Starting ETL job: {job_name} (ID: {job_id})")
-print(f"Parameters: {job_params}")
+if not data_path:
+    print("Error: TRANSFORM_DATA_PATH not set", file=sys.stderr)
+    sys.exit(1)
+
+print(f"Starting transform with params: {params}")
 
 try:
-    # Example transformation: data cleaning and processing
-    # In a real transformation script, you would:
-    # 1. Read data from the source
-    # 2. Apply transformations
-    # 3. Return the result
-    
-    # This is just an example - actual transformation depends on your data
+    with open(data_path, 'r') as f:
+        raw = json.load(f)
+
+    data = pd.DataFrame(raw) if isinstance(raw, list) else raw
+
     if isinstance(data, pd.DataFrame):
-        # Example transformations
-        result = data.copy()
-        
-        # Remove null values
-        result = result.dropna()
-        
-        # Add timestamp column
-        result['processed_at'] = datetime.now()
-        
-        # Apply any custom transformations based on parameters
+        result = data.dropna()
+        result['processed_at'] = datetime.now().isoformat()
+
         if 'filter_column' in params and 'filter_value' in params:
             result = result[result[params['filter_column']] == params['filter_value']]
-        
+
         print(f"Processed {len(result)} rows")
-    
+        output = result.to_dict(orient='records')
     else:
-        # Handle non-DataFrame data
-        result = data
-    
-    print(f"ETL job {job_name} completed successfully")
-    
+        output = data
+
+    if result_path:
+        with open(result_path, 'w') as f:
+            json.dump(output, f)
+
+    print("Transform completed successfully")
+
 except Exception as e:
-    print(f"Error in ETL job {job_name}: {str(e)}")
+    print(f"Transform error: {e}", file=sys.stderr)
     sys.exit(1)

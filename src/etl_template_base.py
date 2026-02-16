@@ -8,11 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable, Iterator
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import mimetypes
-import time
 import fnmatch
-import stat
 
 from .template_models import (
     ETLTemplateConfig, ETLTemplateResult, FileMetadata, FileIndex,
@@ -263,14 +260,18 @@ class ETLTemplateBase(ABC):
         """Perform the actual file operation"""
         try:
             # Create destination directory if needed
-            if self.config.path_mappings[0].create_directories:
-                dest_path.parent.mkdir(parents=True, exist_ok=True)
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
             
             # Resolve conflicts
             final_dest = self._resolve_conflict(source_path, dest_path)
             if final_dest is None:
                 return False  # Skipped
             
+            # Hash source before operation if integrity check needed
+            source_hash = None
+            if self.config.verify_integrity and self.config.operation in [FileOperation.COPY, FileOperation.MOVE]:
+                source_hash = self._calculate_file_hash(source_path, self.config.hash_algorithm)
+
             # Perform operation
             if self.config.operation == FileOperation.COPY:
                 shutil.copy2(str(source_path), str(final_dest))
@@ -280,16 +281,14 @@ class ETLTemplateBase(ABC):
                 os.link(str(source_path), str(final_dest))
             elif self.config.operation == FileOperation.SYMLINK:
                 os.symlink(str(source_path), str(final_dest))
-            
+
             # Preserve timestamps and permissions if requested
             if self.config.preserve_timestamps and self.config.operation == FileOperation.COPY:
                 shutil.copystat(str(source_path), str(final_dest))
-            
+
             # Verify integrity if requested
-            if self.config.verify_integrity and self.config.operation in [FileOperation.COPY, FileOperation.MOVE]:
-                source_hash = self._calculate_file_hash(source_path, self.config.hash_algorithm)
+            if source_hash is not None:
                 dest_hash = self._calculate_file_hash(final_dest, self.config.hash_algorithm)
-                
                 if source_hash != dest_hash:
                     raise ValueError(f"Integrity check failed for {source_path}")
             
@@ -354,7 +353,7 @@ class ETLTemplateBase(ABC):
                 index_path.parent.mkdir(parents=True, exist_ok=True)
                 
                 with open(index_path, 'w') as f:
-                    json.dump(self.file_index.dict(), f, indent=2, default=str)
+                    json.dump(self.file_index.model_dump(), f, indent=2, default=str)
                 
                 self.logger.info(f"File index saved to {index_path}")
             except Exception as e:
