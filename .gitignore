@@ -145,8 +145,6 @@ config.local.yaml
 /test_migration/
 /test_duplicate_workflow/
 **/test_*
-G:/test_*
-**/G:/test_*
 staging/
 staging_*/
 **/staging/

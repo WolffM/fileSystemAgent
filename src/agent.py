@@ -114,13 +114,13 @@ class FileSystemAgent:
         # Start scheduler
         scheduler_config = self.config_manager.get_section('scheduler')
         if scheduler_config.get('enabled', True):
-            scheduler_task = asyncio.create_task(self.scheduler.start())
+            self._scheduler_task = asyncio.create_task(self.scheduler.start())
             self.logger.info("Started job scheduler")
-        
+
         # Start monitoring
         monitoring_config = self.config_manager.get_section('monitoring')
         if monitoring_config.get('enabled', True):
-            monitoring_task = asyncio.create_task(self._start_monitoring())
+            self._monitoring_task = asyncio.create_task(self._start_monitoring())
             self.logger.info("Started monitoring service")
     
     async def _stop_components(self):

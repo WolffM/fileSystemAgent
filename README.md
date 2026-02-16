@@ -1,191 +1,114 @@
 # FileSystem Agent
 
-A multi-capable file system agent for executing ETL (Extract, Transform, Load) operations and automation scripts on a regular cadence.
+A modular file system agent for ETL operations, scheduled automation, file migration, and duplicate detection on Windows.
 
-## Features
-
-- **ETL Operations**: Support for various file formats (CSV, JSON, XML, Parquet, Excel)
-- **Automation Scripts**: Schedule and run automation scripts using cron expressions or intervals
-- **Monitoring**: Real-time system metrics and job monitoring via REST API
-- **Configuration Management**: YAML-based configuration with environment variable support
-- **CLI Interface**: Command-line interface for managing jobs and monitoring
-
-## Quick Start
-
-### Installation
+## Setup
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Configuration
-
-Copy and modify the configuration file:
-
-```bash
-cp config.yaml.example config.yaml
-```
-
-### Running the Agent
-
-```bash
-python main.py start
-```
-
 ## Usage
 
-### ETL Operations
-
-Run an ETL job:
+### Start the Agent
 
 ```bash
-python main.py etl run --name "csv_to_json" --type full_etl --source data/input.csv --destination data/output.json
+python main.py start              # Standard mode
+python main.py --mcp start        # With MCP security layer
+python main.py --no-mcp start     # Explicitly without MCP
+python main.py config show        # Show current config
 ```
 
-### Scheduled Jobs
+### Monitoring API
 
-Add a scheduled job:
-
-```bash
-python main.py schedule add --name "daily_cleanup" --script cleanup.py --type cron --expression "0 2 * * *"
-```
-
-List scheduled jobs:
-
-```bash
-python main.py schedule list
-```
-
-### Monitoring
-
-Check agent status:
-
-```bash
-python main.py monitor status
-```
-
-View system metrics:
-
-```bash
-python main.py monitor metrics
-```
-
-The monitoring API is available at `http://localhost:8080` with the following endpoints:
+When running, the agent exposes a REST API on port 8080:
 
 - `GET /health` - Health check
 - `GET /metrics` - System and job metrics
-- `GET /jobs` - List all jobs
+- `GET /jobs` - ETL and scheduled jobs
 - `GET /events` - File system events
-- `GET /status` - Agent status
+- `GET /status` - Agent status and uptime
 
-## Configuration
+### File Migration Templates
 
-The agent uses a YAML configuration file with the following structure:
+```python
+from src.file_migration_template import create_file_migration_template
 
-```yaml
-agent:
-  name: "FileSystemAgent"
-  log_level: "INFO"
-  data_dir: "./data"
-  scripts_dir: "./scripts"
-  logs_dir: "./logs"
-
-etl:
-  max_workers: 4
-  chunk_size: 10000
-  supported_formats:
-    - csv
-    - json
-    - xml
-    - parquet
-    - excel
-
-scheduler:
-  enabled: true
-  check_interval: 60
-  max_concurrent_jobs: 2
-
-monitoring:
-  enabled: true
-  metrics_port: 8080
-  health_check_interval: 30
+template = create_file_migration_template(
+    source_paths=["/source/path"],
+    destination_path="/dest/path",
+    operation="copy",
+    dry_run=True
+)
+result = template.execute()
 ```
 
-### Environment Variables
+YAML templates are in `templates/` - see `basic_file_migration.yaml`, `advanced_file_migration.yaml`, and `duplicate_detection.yaml`.
 
-Configuration can be overridden using environment variables with the `FSA_` prefix:
+### Duplicate Detection
 
-```bash
-export FSA_AGENT_LOG_LEVEL=DEBUG
-export FSA_MONITORING_METRICS_PORT=9090
+```python
+from src.file_indexing_system import FileIndexingSystem
+
+indexer = FileIndexingSystem("index.db")
+indexer.index_directory(Path("/path/to/scan"))
+duplicates = indexer.find_duplicates(min_size=1024)
+report = indexer.generate_duplicate_report("/path/to/scan")
 ```
-
-## ETL Operations
-
-### Supported File Formats
-
-- **CSV**: Comma-separated values
-- **JSON**: JavaScript Object Notation
-- **XML**: Extensible Markup Language
-- **Parquet**: Columnar storage format
-- **Excel**: Microsoft Excel files
 
 ### Transform Scripts
 
-Create custom transformation scripts in the `scripts/` directory:
+Transform scripts run as subprocesses and receive data via environment variables:
 
 ```python
 # scripts/my_transform.py
-import pandas as pd
+import os, json, pandas as pd
 
-# Transform the data
-result = data.copy()
-result['new_column'] = result['old_column'].apply(lambda x: x.upper())
-result = result.dropna()
+data = pd.read_json(os.environ["TRANSFORM_DATA_PATH"])
+# ... transform ...
+data.to_json(os.environ["TRANSFORM_RESULT_PATH"])
 ```
 
-## Automation Scripts
+### Automation Scripts
 
-Automation scripts receive job information through environment variables:
+Scheduled scripts receive job context via environment variables:
 
 ```python
-import os
-import json
+import os, json
 
-job_id = os.environ.get('JOB_ID')
-job_name = os.environ.get('JOB_NAME')
-job_params = json.loads(os.environ.get('JOB_PARAMS', '{}'))
+job_id = os.environ.get("JOB_ID")
+job_name = os.environ.get("JOB_NAME")
+job_params = json.loads(os.environ.get("JOB_PARAMS", "{}"))
 ```
 
-## Directory Structure
+## Architecture
 
 ```
-fileSystemAgent/
-├── src/
-│   ├── __init__.py
-│   ├── agent.py          # Main agent class
-│   ├── etl.py           # ETL operations
-│   ├── scheduler.py     # Job scheduling
-│   ├── monitoring.py    # Monitoring service
-│   ├── config.py        # Configuration management
-│   ├── models.py        # Data models
-│   └── cli.py           # Command-line interface
-├── scripts/             # Automation scripts
-├── data/               # Data files
-├── logs/               # Log files
-├── config.yaml         # Configuration file
-├── requirements.txt    # Python dependencies
-└── main.py            # Entry point
+src/
+  agent.py              Main orchestrator
+  agent_mcp.py          MCP-enabled agent (extends agent.py)
+  etl.py                ETL engine (CSV, JSON, XML, Parquet, Excel)
+  etl_mcp.py            Async MCP ETL engine
+  scheduler.py          Cron/interval job scheduler
+  scheduler_mcp.py      MCP-enabled scheduler
+  monitoring.py         FastAPI metrics + health checks
+  config.py             YAML config with env var overrides (FSA_ prefix)
+  models.py             Pydantic data models
+  template_models.py    File migration config models
+  etl_template_base.py  Abstract base for file operations
+  file_migration_template.py  Concrete migration template
+  file_indexing_system.py     SQLite-backed file indexing
+  media_fingerprinting.py     Perceptual hashing (imagehash, videohash)
+  mcp_server.py         MCP file system server
+  mcp_client.py         MCP client wrapper
+  cli.py                Click CLI
 ```
 
-## Contributing
+## Configuration
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+Edit `config.yaml` or override with `FSA_` environment variables:
 
-## License
-
-This project is licensed under the MIT License.
+```bash
+FSA_AGENT_LOG_LEVEL=DEBUG
+FSA_MONITORING_METRICS_PORT=9090
+```

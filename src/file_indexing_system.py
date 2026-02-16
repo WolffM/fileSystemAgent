@@ -1,24 +1,17 @@
-import os
 import json
 import sqlite3
 import hashlib
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Iterator
+from typing import Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 
-try:
-    from .template_models import (
-        FileMetadata, FileIndex, DuplicateGroup, DuplicateReport, 
-        HashAlgorithm, IndexingMode
-    )
-except ImportError:
-    from template_models import (
-        FileMetadata, FileIndex, DuplicateGroup, DuplicateReport, 
-        HashAlgorithm, IndexingMode
-    )
+from .template_models import (
+    FileMetadata, DuplicateGroup, DuplicateReport,
+    HashAlgorithm
+)
 
 
 class FileIndexingSystem:
@@ -112,7 +105,6 @@ class FileIndexingSystem:
         hash_func = getattr(hashlib, algorithm.value)()
         
         try:
-            file_size = file_path.stat().st_size
             chunk_size = 8192
             
             with open(file_path, 'rb') as f:
@@ -459,7 +451,7 @@ class FileIndexingSystem:
             files = []
             for row in cursor.fetchall():
                 metadata = self._row_to_metadata(row)
-                files.append(metadata.dict())
+                files.append(metadata.model_dump())
             
             with open(output_path, 'w') as f:
                 json.dump(files, f, indent=2, default=str)

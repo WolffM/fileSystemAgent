@@ -1,22 +1,16 @@
-import asyncio
 import logging
-import os
 import subprocess
 import json
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass
 
 from mcp.server import Server
 from mcp.types import (
-    Tool, 
-    TextContent, 
-    ImageContent, 
-    EmbeddedResource,
+    TextContent,
     CallToolResult
 )
 import mcp.server.stdio
-from pydantic import BaseModel
 
 from .models import FileSystemEvent
 
@@ -24,9 +18,9 @@ from .models import FileSystemEvent
 @dataclass
 class MCPConfig:
     enabled: bool = True
-    allowed_paths: List[str] = None
+    allowed_paths: Optional[List[str]] = None
     max_file_size: int = 100 * 1024 * 1024  # 100MB
-    allowed_commands: List[str] = None
+    allowed_commands: Optional[List[str]] = None
     security_mode: str = "strict"  # strict, permissive
 
 
@@ -325,105 +319,9 @@ class FileSystemMCPServer:
         """Get all logged events"""
         return self.events.copy()
     
-    def clear_events(self):
-        """Clear event log"""
-        self.events.clear()
-    
     async def run(self):
         """Run the MCP server"""
         self.logger.info("Starting MCP FileSystem server")
-        
-        # List available tools
-        tools = [
-            Tool(
-                name="read_file",
-                description="Read a file from the filesystem",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to the file"},
-                        "encoding": {"type": "string", "default": "utf-8"}
-                    },
-                    "required": ["path"]
-                }
-            ),
-            Tool(
-                name="write_file",
-                description="Write content to a file",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to the file"},
-                        "content": {"type": "string", "description": "Content to write"},
-                        "encoding": {"type": "string", "default": "utf-8"}
-                    },
-                    "required": ["path", "content"]
-                }
-            ),
-            Tool(
-                name="list_directory",
-                description="List contents of a directory",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to the directory"}
-                    },
-                    "required": ["path"]
-                }
-            ),
-            Tool(
-                name="execute_command",
-                description="Execute a system command",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "command": {"type": "string", "description": "Command to execute"},
-                        "args": {"type": "array", "items": {"type": "string"}, "description": "Command arguments"},
-                        "cwd": {"type": "string", "description": "Working directory"}
-                    },
-                    "required": ["command"]
-                }
-            ),
-            Tool(
-                name="create_directory",
-                description="Create a directory",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to create"},
-                        "parents": {"type": "boolean", "default": True, "description": "Create parent directories"}
-                    },
-                    "required": ["path"]
-                }
-            ),
-            Tool(
-                name="delete_file",
-                description="Delete a file or directory",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to delete"}
-                    },
-                    "required": ["path"]
-                }
-            ),
-            Tool(
-                name="get_file_info",
-                description="Get file information",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to inspect"}
-                    },
-                    "required": ["path"]
-                }
-            )
-        ]
-        
-        # Register tools
-        for tool in tools:
-            self.server.tool(tool.name, tool.description, tool.inputSchema)
-        
-        # Run server
+
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await self.server.run(read_stream, write_stream)

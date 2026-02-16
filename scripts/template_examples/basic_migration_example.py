@@ -9,11 +9,12 @@ import sys
 import yaml
 from pathlib import Path
 
-# Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+# Ensure project root is on path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
-from file_migration_template import FileMigrationTemplate, create_file_migration_template
-from template_models import ETLTemplateConfig, FileFilter, PathMapping, ConflictResolution, FileOperation
+from src.file_migration_template import FileMigrationTemplate, create_file_migration_template
+from src.template_models import ETLTemplateConfig, FileFilter, PathMapping, ConflictResolution, FileOperation
 
 
 def main():

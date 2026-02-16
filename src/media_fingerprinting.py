@@ -34,11 +34,6 @@ try:
 except ImportError:
     VIDEO_HASHING_AVAILABLE = False
 
-try:
-    from .template_models import HashAlgorithm
-except ImportError:
-    from template_models import HashAlgorithm
-
 
 @dataclass
 class MediaFingerprint:
@@ -143,42 +138,27 @@ class MediaFingerprintEngine:
         """Calculate perceptual hashes for images"""
         if not self.enable_image_hashing:
             return {}
-        
+
+        hash_funcs = {
+            'dhash': lambda img: str(imagehash.dhash(img, hash_size=self.hash_size)),
+            'phash': lambda img: str(imagehash.phash(img, hash_size=self.hash_size)),
+            'ahash': lambda img: str(imagehash.average_hash(img, hash_size=self.hash_size)),
+            'whash': lambda img: str(imagehash.whash(img, hash_size=self.hash_size)),
+        }
+
         try:
-            # Open image with PIL
             with Image.open(image_path) as img:
-                # Convert to RGB if necessary
                 if img.mode in ('RGBA', 'LA', 'P'):
                     img = img.convert('RGB')
-                
+
                 hashes = {}
-                
-                # Calculate different hash types
-                if self.preferred_image_hash == "dhash" or "dhash" in self.preferred_image_hash:
-                    hashes['dhash'] = str(imagehash.dhash(img, hash_size=self.hash_size))
-                
-                if self.preferred_image_hash == "phash" or "phash" in self.preferred_image_hash:
-                    hashes['phash'] = str(imagehash.phash(img, hash_size=self.hash_size))
-                
-                if self.preferred_image_hash == "ahash" or "ahash" in self.preferred_image_hash:
-                    hashes['ahash'] = str(imagehash.average_hash(img, hash_size=self.hash_size))
-                
-                if self.preferred_image_hash == "whash" or "whash" in self.preferred_image_hash:
-                    hashes['whash'] = str(imagehash.whash(img, hash_size=self.hash_size))
-                
-                # Always calculate the preferred hash if not already done
-                if self.preferred_image_hash not in hashes:
-                    if self.preferred_image_hash == "dhash":
-                        hashes['dhash'] = str(imagehash.dhash(img, hash_size=self.hash_size))
-                    elif self.preferred_image_hash == "phash":
-                        hashes['phash'] = str(imagehash.phash(img, hash_size=self.hash_size))
-                    elif self.preferred_image_hash == "ahash":
-                        hashes['ahash'] = str(imagehash.average_hash(img, hash_size=self.hash_size))
-                    elif self.preferred_image_hash == "whash":
-                        hashes['whash'] = str(imagehash.whash(img, hash_size=self.hash_size))
-                
+
+                # Always calculate the preferred hash
+                if self.preferred_image_hash in hash_funcs:
+                    hashes[self.preferred_image_hash] = hash_funcs[self.preferred_image_hash](img)
+
                 return hashes
-                
+
         except Exception as e:
             self.logger.error(f"Error calculating image hashes for {image_path}: {e}")
             return {}

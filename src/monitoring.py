@@ -3,13 +3,12 @@ import psutil
 import time
 import threading
 from datetime import datetime
-from typing import Dict, List, Optional
-from pathlib import Path
+from typing import Dict, List
 from fastapi import FastAPI
 import uvicorn
 from pydantic import BaseModel
 
-from .models import ETLJob, ScheduledJob, FileSystemEvent
+from .models import ETLJob, ScheduledJob, FileSystemEvent, JobStatus
 
 
 class SystemMetrics(BaseModel):
@@ -109,14 +108,14 @@ class MonitoringService:
     def get_job_metrics(self) -> JobMetrics:
         """Get job metrics"""
         total_jobs = len(self.job_history)
-        running_jobs = len([job for job in self.job_history if job.status == "running"])
-        completed_jobs = len([job for job in self.job_history if job.status == "completed"])
-        failed_jobs = len([job for job in self.job_history if job.status == "failed"])
+        running_jobs = len([job for job in self.job_history if job.status == JobStatus.RUNNING])
+        completed_jobs = len([job for job in self.job_history if job.status == JobStatus.COMPLETED])
+        failed_jobs = len([job for job in self.job_history if job.status == JobStatus.FAILED])
         
         # Calculate average duration for completed jobs
         completed_job_durations = []
         for job in self.job_history:
-            if job.status == "completed" and job.started_at and job.completed_at:
+            if job.status == JobStatus.COMPLETED and job.started_at and job.completed_at:
                 duration = (job.completed_at - job.started_at).total_seconds()
                 completed_job_durations.append(duration)
         
@@ -235,7 +234,7 @@ class MonitoringService:
         if job_metrics.failed_jobs > 0:
             recent_failures = [
                 job for job in self.job_history[-10:]
-                if job.status == "failed"
+                if job.status == JobStatus.FAILED
             ]
             if recent_failures:
                 alerts.append({

@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 from croniter import croniter
 
-from .models import ScheduledJob, ScheduleType, JobStatus
+from .models import ScheduledJob, ScheduleType
 
 
 class JobScheduler:
@@ -195,22 +195,3 @@ class JobScheduler:
             job.enabled = False
             job.next_run = None
     
-    def get_job_status(self, job_id: str) -> Optional[str]:
-        """Get the status of a running job"""
-        if job_id in self.running_jobs:
-            process = self.running_jobs[job_id]
-            if process.poll() is None:
-                return "running"
-            else:
-                return "completed" if process.returncode == 0 else "failed"
-        return None
-    
-    def cancel_job(self, job_id: str) -> bool:
-        """Cancel a running job"""
-        if job_id in self.running_jobs:
-            process = self.running_jobs[job_id]
-            if process.poll() is None:
-                process.terminate()
-                self.logger.info(f"Cancelled job: {job_id}")
-                return True
-        return False

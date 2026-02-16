@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
 MCP Server entry point for FileSystem Agent
+
+Usage: python -m src
 """
 import asyncio
-import sys
-from pathlib import Path
 
-# Add parent directory to path to import src modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from .mcp_server import FileSystemMCPServer, MCPConfig
 
-from src.mcp_server import FileSystemMCPServer, MCPConfig
 
 async def main():
     """Run the MCP server"""
@@ -17,7 +15,7 @@ async def main():
         enabled=True,
         allowed_paths=[
             "./data",
-            "./scripts", 
+            "./scripts",
             "./logs",
             "./config.yaml"
         ],
@@ -27,7 +25,7 @@ async def main():
         ],
         security_mode="strict"
     )
-    
+
     server = FileSystemMCPServer(config)
     await server.run()
 
