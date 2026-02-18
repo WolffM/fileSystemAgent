@@ -25,6 +25,41 @@ monitoring:
   metrics_port: 8080
   health_check_interval: 30
 
+security:
+  enabled: true
+  tools_dir: "./tools"
+  output_dir: "./data/security/scans"
+  rules_dir: "./rules"
+  tools:
+    hollows_hunter:
+      github_repo: "hasherezade/hollows_hunter"
+      requires_admin: true
+    yara_x:
+      github_repo: "VirusTotal/yara-x"
+      rules_dir: "./rules/yara"
+    clamav:
+      update_before_scan: true
+    hayabusa:
+      github_repo: "Yamato-Security/hayabusa"
+      min_level: "medium"
+    chainsaw:
+      github_repo: "WithSecureLabs/chainsaw"
+      sigma_dir: "./rules/sigma"
+    sysmon:
+      config_file: "./rules/sysmon/sysmonconfig.xml"
+    autorunsc:
+      install_method: "manual"
+    sigcheck:
+      install_method: "manual"
+      target_path: "C:\\Windows\\System32"
+    listdlls:
+      install_method: "manual"
+  pipeline:
+    daily:
+      enabled: true
+      schedule: "0 2 * * *"
+      stop_on_failure: false
+
 mcp:
   enabled: false
   security_mode: "strict"  # strict, permissive

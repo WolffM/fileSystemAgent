@@ -141,14 +141,19 @@ dmypy.json
 config.local.yaml
 .env.local
 
-# Test directories and files
+# Test working directories (not test source files)
 /test_migration/
 /test_duplicate_workflow/
-**/test_*
 staging/
 staging_*/
 **/staging/
 **/staging_*/
+
+# Security tool binaries (downloaded, not checked in)
+/tools/
+
+# Security scan output
+/data/security/
 
 # File system operation output
 file_index.db

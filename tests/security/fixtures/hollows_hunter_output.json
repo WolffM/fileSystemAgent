@@ -1,0 +1,39 @@
+{
+    "pid": 0,
+    "is_64bit": true,
+    "scan_timestamp": "2025-01-15 02:15:30",
+    "scanned": {
+        "4567": {
+            "name": "suspicious.exe",
+            "replaced": 2,
+            "implanted": 1,
+            "hdr_modified": 0,
+            "patched": 0,
+            "iat_hooked": 0,
+            "unreachable_file": 0,
+            "other": 0
+        },
+        "1234": {
+            "name": "notepad.exe",
+            "replaced": 0,
+            "implanted": 0,
+            "hdr_modified": 0,
+            "patched": 0,
+            "iat_hooked": 0,
+            "unreachable_file": 0,
+            "other": 0
+        },
+        "8901": {
+            "name": "injected_svc.exe",
+            "replaced": 0,
+            "implanted": 0,
+            "hdr_modified": 1,
+            "patched": 3,
+            "iat_hooked": 2,
+            "unreachable_file": 0,
+            "other": 0
+        }
+    },
+    "scanned_count": 3,
+    "suspicious_count": 2
+}

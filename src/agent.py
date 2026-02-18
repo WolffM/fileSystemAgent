@@ -43,14 +43,24 @@ class FileSystemAgent:
             health_check_interval=monitoring_config.get('health_check_interval', 30)
         )
         
+        # Security scanning (optional — initialized if security.enabled)
+        self.tool_manager = None
+        self.scan_pipeline = None
+        security_config = self.config_manager.get_section('security')
+        if security_config.get('enabled', False):
+            self._init_security(security_config)
+            self.monitoring.register_security_routes(
+                self.tool_manager, self.scan_pipeline
+            )
+
         # State management
         self.is_running = False
         self.executor = ThreadPoolExecutor(max_workers=10)
-        
+
         # Signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
-        
+
         self.logger = logging.getLogger(__name__)
     
     def _setup_logging(self):
@@ -238,6 +248,56 @@ class FileSystemAgent:
         """Get system alerts"""
         return self.monitoring.get_alerts()
     
+    # Security Scanning
+    def _init_security(self, security_config: dict):
+        """Initialize the security scanning subsystem."""
+        from .security.tool_manager import ToolManager
+        from .security.pipeline import ScanPipeline
+
+        self.tool_manager = ToolManager(
+            tools_dir=security_config.get('tools_dir', './tools'),
+            config=security_config,
+        )
+        self.scan_pipeline = ScanPipeline(
+            tool_manager=self.tool_manager,
+            config=security_config,
+        )
+
+    async def run_security_scan(self, pipeline_name: str = "daily") -> Optional[dict]:
+        """Run a security scan pipeline."""
+        if not self.scan_pipeline:
+            self.logger.warning("Security scanning not enabled")
+            return None
+
+        from .security.pipeline import ScanPipeline
+
+        if pipeline_name == "daily":
+            config = ScanPipeline.create_daily_pipeline()
+        elif pipeline_name == "forensic":
+            config = ScanPipeline.create_forensic_pipeline()
+        else:
+            self.logger.error(f"Unknown pipeline: {pipeline_name}")
+            return None
+
+        result = await self.scan_pipeline.run_pipeline(config)
+        return result.model_dump()
+
+    def get_security_tools(self) -> Optional[dict]:
+        """Get security tool availability status."""
+        if not self.tool_manager:
+            return None
+        tools = self.tool_manager.check_all_tools()
+        return {
+            name: {"installed": info.installed, "path": str(info.path) if info.path else None}
+            for name, info in tools.items()
+        }
+
+    def get_security_findings(self, limit: int = 50) -> Optional[list]:
+        """Get recent security findings."""
+        if not self.scan_pipeline:
+            return None
+        return [f.model_dump() for f in self.scan_pipeline.get_all_findings(limit)]
+
     # Health Check
     def is_healthy(self) -> bool:
         """Check if the agent is healthy"""

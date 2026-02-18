@@ -1,0 +1,15 @@
+{
+  "version": "1.13.0",
+  "matches": [
+    {
+      "rule": "APT_Backdoor_Win32",
+      "file": "C:\\Users\\test\\malware.exe",
+      "metadata": {"severity": "critical", "description": "Known APT backdoor variant", "mitre_attack": "T1059"}
+    },
+    {
+      "rule": "HKTL_Mimikatz",
+      "file": "C:\\Users\\test\\suspicious.dll",
+      "metadata": {"severity": "high", "description": "Mimikatz credential harvesting tool"}
+    }
+  ]
+}

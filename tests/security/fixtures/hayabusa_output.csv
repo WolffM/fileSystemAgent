@@ -1,0 +1,6 @@
+Timestamp,Computer,Channel,EventID,Level,RecordID,RuleTitle,Details,ExtraFieldInfo,RuleFile
+2025-01-15T02:00:00.000Z,WORKSTATION,Security,4625,high,10001,Logon Failure (Wrong Password),TargetUser: admin | IpAddress: 192.168.1.100,User: admin,rules/logon/failed_logon.yml
+2025-01-15T02:01:00.000Z,WORKSTATION,Security,4625,medium,10002,Multiple Failed Logons,TargetUser: admin | Count: 5,User: admin,rules/logon/brute_force.yml
+2025-01-15T02:05:00.000Z,WORKSTATION,Sysmon,1,critical,20001,Suspicious Process - Encoded PowerShell,CommandLine: powershell -enc <base64>,ParentProcess: cmd.exe,rules/sysmon/encoded_powershell.yml
+2025-01-15T02:10:00.000Z,WORKSTATION,Security,4688,info,30001,Process Creation,ProcessName: notepad.exe,User: user,rules/process/creation.yml
+2025-01-15T02:15:00.000Z,WORKSTATION,Sysmon,3,high,20002,Connection to Known C2,DestinationIp: 10.10.10.10 | DestPort: 443,Process: svchost.exe,rules/sysmon/c2_connection.yml

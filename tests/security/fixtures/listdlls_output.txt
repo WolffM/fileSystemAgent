@@ -1,0 +1,18 @@
+
+ListDLLs v3.2 - DLL lister for Win32
+Copyright (C) 1997-2016 Mark Russinovich
+Sysinternals - www.sysinternals.com
+
+==============================================================================
+explorer.exe pid: 4200
+Command line: C:\WINDOWS\Explorer.EXE
+
+  0x00007FF600000  0x00100000  1.0.0.0  C:\Temp\injected.dll
+  0x00007FF700000  0x00050000  2.0.0.0  C:\Users\test\AppData\shady_hook.dll
+
+==============================================================================
+svchost.exe pid: 1234
+Command line: C:\WINDOWS\system32\svchost.exe -k netsvcs
+
+  0x00007FF800000  0x00030000  1.0.0.0  C:\ProgramData\unknown_service.dll
+

@@ -1,0 +1,4 @@
+Path,Verified,Date,Publisher,Company,Description,Product,Product Version,File Version,Machine Type
+C:\Windows\System32\evil.dll,Unsigned,2025-01-10,n/a,n/a,Unknown DLL,n/a,n/a,1.0.0.0,64-bit
+C:\Windows\System32\legit.exe,Signed,2025-01-01,Microsoft Corporation,Microsoft Corporation,System Tool,Windows,10.0,10.0.19041.1,64-bit
+C:\Windows\System32\suspicious.sys,Unsigned,2025-01-14,n/a,n/a,Driver,n/a,n/a,2.0.0.0,64-bit

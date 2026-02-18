@@ -1,0 +1,33 @@
+[
+    {
+        "name": "Suspicious PowerShell Execution",
+        "level": "high",
+        "timestamp": "2025-01-15T02:05:00Z",
+        "source": "C:\\Windows\\System32\\winevt\\Logs\\Sysmon.evtx",
+        "authors": "Sigma Community",
+        "document": {
+            "data": {
+                "CommandLine": "powershell -enc JABz..."
+            }
+        }
+    },
+    {
+        "name": "Event Log Clearing",
+        "level": "critical",
+        "timestamp": "2025-01-15T03:00:00Z",
+        "source": "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx",
+        "authors": "WithSecure",
+        "document": {
+            "data": {
+                "SubjectUserName": "admin"
+            }
+        }
+    },
+    {
+        "name": "Normal User Login",
+        "level": "informational",
+        "timestamp": "2025-01-15T01:00:00Z",
+        "source": "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx",
+        "authors": "Sigma Community"
+    }
+]

@@ -157,6 +157,13 @@ class MonitoringService:
         if len(self.events) > 1000:
             self.events = self.events[-1000:]
     
+    def register_security_routes(self, tool_manager, scan_pipeline):
+        """Register security scanning API routes."""
+        from .security.security_monitor import create_security_router
+        router = create_security_router(tool_manager, scan_pipeline)
+        self.app.include_router(router)
+        self.logger.info("Registered security monitoring routes")
+
     def start_monitoring(self):
         """Start the monitoring service"""
         self.is_running = True

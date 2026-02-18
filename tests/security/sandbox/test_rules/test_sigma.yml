@@ -1,0 +1,12 @@
+title: Test Rule - BITS Transfer Activity
+id: 12345678-1234-1234-1234-123456789012
+status: test
+description: Test rule for E2E testing - detects BITS transfer events
+logsource:
+    product: windows
+    service: bits-client
+detection:
+    selection:
+        EventID: 59
+    condition: selection
+level: low

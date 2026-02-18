@@ -1,0 +1,17 @@
+C:\Users\test\Downloads\eicar.txt: Eicar-Signature FOUND
+C:\Users\test\Downloads\malware_sample.exe: Win.Trojan.Generic-12345 FOUND
+C:\Users\test\Documents\clean_file.txt: OK
+C:\Users\test\Documents\another_clean.pdf: OK
+C:\Users\test\AppData\suspicious.dll: Win.Malware.Agent-67890 FOUND
+
+----------- SCAN SUMMARY -----------
+Known viruses: 8700000
+Engine version: 1.4.2
+Scanned directories: 15
+Scanned files: 42
+Infected files: 3
+Data scanned: 256.50 MB
+Data read: 512.00 MB
+Time: 45.123 sec (0 m 45 s)
+Start Date: 2025:01:15 02:00:00
+End Date:   2025:01:15 02:00:45

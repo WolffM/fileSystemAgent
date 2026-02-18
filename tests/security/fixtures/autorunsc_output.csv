@@ -1,0 +1,4 @@
+Entry,Entry Location,Enabled,Category,Description,Publisher,Image Path,Launch String,Signer,Verified,VT detection
+SuspiciousService,HKLM\System\CurrentControlSet\Services,enabled,Services,Unknown Service,,C:\Temp\evil.exe,C:\Temp\evil.exe -svc,,Not Verified,5|72
+MicrosoftUpdate,HKLM\Software\Microsoft\Windows\CurrentVersion\Run,enabled,Logon,Windows Update,Microsoft Corporation,C:\Windows\System32\wuauclt.exe,C:\Windows\System32\wuauclt.exe,Microsoft Windows,Verified,0|0
+ShadyHelper,HKLM\Software\Microsoft\Windows\CurrentVersion\Run,enabled,Logon,Helper DLL,,C:\Users\test\helper.dll,rundll32.exe C:\Users\test\helper.dll,,Not Verified,
