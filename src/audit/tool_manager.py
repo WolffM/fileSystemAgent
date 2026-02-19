@@ -52,8 +52,8 @@ DEFAULT_TOOLS: list[dict[str, Any]] = [
         "name": "freshclam",
         "display_name": "FreshClam",
         "exe_name": "freshclam.exe",
-        "github_repo": "Cisco-Talos/clamav",
-        "github_asset_pattern": "clamav-*.win.x64.zip",
+        "install_method": "shared",
+        "shared_with": "clamav",
         "license": "GPL-2.0",
     },
     {
@@ -174,6 +174,18 @@ class ToolManager:
                     logger.debug(f"{tool.display_name}: found at {tool.path}")
                     return tool
 
+        # 2b. Check shared tool directory (e.g. freshclam lives in clamav/)
+        shared_with = getattr(tool, "shared_with", None)
+        if shared_with:
+            shared_dir = self.tools_dir / shared_with
+            if shared_dir.is_dir():
+                for candidate in shared_dir.rglob(tool.exe_name):
+                    if candidate.is_file():
+                        tool.path = candidate.resolve()
+                        tool.installed = True
+                        logger.debug(f"{tool.display_name}: found at {tool.path}")
+                        return tool
+
         # Also check tools dir directly (flat layout)
         candidate_flat = self.tools_dir / tool.exe_name
         if candidate_flat.is_file():
@@ -244,6 +256,11 @@ class ToolManager:
         if not tool:
             raise KeyError(f"Unknown tool: {tool_name}")
 
+        if tool.install_method == "shared":
+            # Shared tools don't download separately — check parent dir
+            self.check_tool(tool_name)
+            return tool.installed
+
         if tool.install_method == "direct_url":
             return await self._download_direct_url(tool_name)
 
@@ -307,6 +324,7 @@ class ToolManager:
                 tool_info = self.check_tool(tool_name)
                 if tool_info.installed:
                     logger.info(f"{tool.display_name} installed to {tool_info.path}")
+                    self._post_download_setup(tool_name, dest_dir)
                     return True
                 else:
                     logger.error(
@@ -332,14 +350,59 @@ class ToolManager:
                     results[name] = True
                     continue
 
-            if (tool.install_method == "github_release" and tool.github_repo) or \
-               (tool.install_method == "direct_url" and tool.direct_url):
+            if tool.install_method == "shared":
+                # Shared tools are installed as part of their parent tool
+                shared_name = getattr(tool, "shared_with", None)
+                if shared_name and results.get(shared_name):
+                    # Parent was already downloaded, re-check this tool
+                    self.check_tool(name)
+                    results[name] = tool.installed
+                else:
+                    results[name] = False
+            elif (tool.install_method == "github_release" and tool.github_repo) or \
+                 (tool.install_method == "direct_url" and tool.direct_url):
                 results[name] = await self.download_tool(name)
             else:
                 logger.info(f"{tool.display_name}: unsupported install method")
                 results[name] = False
 
         return results
+
+    def _post_download_setup(self, tool_name: str, dest_dir: Path) -> None:
+        """Run post-download setup for tools that need configuration files."""
+        if tool_name == "clamav":
+            self._setup_clamav_config(dest_dir)
+
+    def _setup_clamav_config(self, clamav_dir: Path) -> None:
+        """Generate freshclam.conf so freshclam can update virus definitions.
+
+        ClamAV's portable zip ships with a sample config but no usable one.
+        We create a minimal freshclam.conf next to the freshclam.exe with
+        DatabaseDirectory pointing to a 'db' folder alongside the exe.
+        """
+        # Find freshclam.exe to put config next to it
+        freshclam_exe = None
+        for candidate in clamav_dir.rglob("freshclam.exe"):
+            if candidate.is_file():
+                freshclam_exe = candidate
+                break
+        if not freshclam_exe:
+            return
+
+        conf_path = freshclam_exe.parent / "freshclam.conf"
+        if conf_path.exists():
+            logger.debug("freshclam.conf already exists, skipping generation")
+            return
+
+        db_dir = freshclam_exe.parent / "db"
+        db_dir.mkdir(exist_ok=True)
+
+        conf_content = (
+            f"DatabaseDirectory {db_dir}\n"
+            f"DatabaseMirror database.clamav.net\n"
+        )
+        conf_path.write_text(conf_content)
+        logger.info(f"Generated {conf_path}")
 
     async def _download_direct_url(self, tool_name: str) -> bool:
         """Download a tool from a direct URL (non-GitHub)."""

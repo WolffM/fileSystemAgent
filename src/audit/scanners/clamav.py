@@ -34,13 +34,19 @@ class ClamAVScanner(ScannerBase):
         self.update_before_scan = self.config.get("update_before_scan", True)
 
     def build_command(self, scan_config: ScanConfig, output_dir: Path) -> List[str]:
-        exe = str(self.tool_manager.get_tool_path("clamav"))
+        exe_path = self.tool_manager.get_tool_path("clamav")
+        exe = str(exe_path)
         log_file = output_dir / "clamscan.log"
 
         cmd = [exe]
         if scan_config.target.recursive:
             cmd.append("-r")
         cmd.append(f"--log={log_file}")
+
+        # Point clamscan to the database directory populated by freshclam
+        db_dir = exe_path.parent / "db"
+        if db_dir.is_dir():
+            cmd.append(f"--database={db_dir}")
 
         # Extra args
         if "max_filesize" in scan_config.extra_args:
@@ -95,10 +101,20 @@ class ClamAVScanner(ScannerBase):
             self.logger.warning("freshclam not found, skipping signature update")
             return
 
+        # Build freshclam command with config-file if it exists next to the exe
+        cmd = [str(freshclam_path)]
+        conf_path = freshclam_path.parent / "freshclam.conf"
+        if conf_path.is_file():
+            cmd.extend(["--config-file", str(conf_path)])
+            # Also pass --datadir so clamscan can find the downloaded databases
+            db_dir = freshclam_path.parent / "db"
+            if db_dir.is_dir():
+                cmd.extend(["--datadir", str(db_dir)])
+
         self.logger.info("Updating ClamAV signatures via freshclam...")
         try:
             process = await asyncio.create_subprocess_exec(
-                str(freshclam_path),
+                *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

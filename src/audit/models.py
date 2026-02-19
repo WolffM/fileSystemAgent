@@ -44,6 +44,7 @@ class ToolInfo(BaseModel):
     github_repo: Optional[str] = None
     github_asset_pattern: Optional[str] = None
     direct_url: Optional[str] = None
+    shared_with: Optional[str] = None
     requires_admin: bool = False
     installed: bool = False
     install_method: str = "github_release"

@@ -345,10 +345,16 @@ class TestSigcheckE2E:
 class TestPipelineE2E:
     """End-to-end pipeline tests using available tools."""
 
-    async def test_pipeline_skips_missing_tools(self, tool_manager, output_dir):
+    async def test_pipeline_skips_missing_tools(self, output_dir, tmp_path):
         """Pipeline should gracefully skip tools that aren't installed."""
+        from src.audit.tool_manager import ToolManager
+
+        # Use empty tools dir so nothing is found
+        empty_tools = tmp_path / "empty_tools"
+        empty_tools.mkdir()
+        empty_tm = ToolManager(tools_dir=str(empty_tools))
         pipeline = ScanPipeline(
-            tool_manager=tool_manager,
+            tool_manager=empty_tm,
             config={"output_dir": str(output_dir)},
         )
 
@@ -356,7 +362,7 @@ class TestPipelineE2E:
             name="test_skip_missing",
             steps=[
                 ScanConfig(
-                    tool_name="clamav",  # Not installed
+                    tool_name="clamav",  # Not installed in empty dir
                     target=ScanTarget(target_type="path", target_value=str(SANDBOX_DIR)),
                     output_dir=str(output_dir),
                     timeout=10,

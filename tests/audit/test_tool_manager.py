@@ -186,11 +186,11 @@ class TestToolManagerInstallMethods:
         assert info.github_repo == "Cisco-Talos/clamav"
         assert info.github_asset_pattern is not None
 
-    def test_freshclam_is_github_release(self, tmp_tools_dir):
+    def test_freshclam_is_shared_with_clamav(self, tmp_tools_dir):
         tm = ToolManager(tools_dir=str(tmp_tools_dir))
         info = tm.get_tool_info("freshclam")
-        assert info.install_method == "github_release"
-        assert info.github_repo == "Cisco-Talos/clamav"
+        assert info.install_method == "shared"
+        assert info.shared_with == "clamav"
 
     def test_sysinternals_are_direct_url(self, tmp_tools_dir):
         tm = ToolManager(tools_dir=str(tmp_tools_dir))
@@ -208,7 +208,8 @@ class TestToolManagerInstallMethods:
         for name, tool in tm._tools.items():
             can_auto = (
                 (tool.install_method == "github_release" and tool.github_repo) or
-                (tool.install_method == "direct_url" and tool.direct_url)
+                (tool.install_method == "direct_url" and tool.direct_url) or
+                (tool.install_method == "shared" and getattr(tool, "shared_with", None))
             )
             assert can_auto, f"{name} cannot be auto-downloaded"
 
@@ -281,7 +282,10 @@ class TestDownloadDirectUrl:
 
         # Pre-install all tools so bootstrap skips them
         for name, tool in tm._tools.items():
-            tool_dir = tmp_tools_dir / name
+            shared = getattr(tool, "shared_with", None)
+            # Shared tools live in the parent's directory
+            dir_name = shared if shared else name
+            tool_dir = tmp_tools_dir / dir_name
             tool_dir.mkdir(exist_ok=True)
             (tool_dir / tool.exe_name).write_text("fake")
 
@@ -317,3 +321,56 @@ class TestDownloadDirectUrl:
             results = await tm.bootstrap_all(skip_existing=True)
 
         assert results["sigcheck"] is True
+
+
+class TestSharedTools:
+
+    def test_freshclam_resolves_from_clamav_dir(self, tmp_tools_dir):
+        """freshclam.exe lives inside tools/clamav/, not tools/freshclam/."""
+        # Create clamav dir with both exes (as the real zip would)
+        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
+        clamav_dir.mkdir(parents=True)
+        (clamav_dir / "clamscan.exe").write_text("fake")
+        (clamav_dir / "freshclam.exe").write_text("fake")
+
+        tm = ToolManager(tools_dir=str(tmp_tools_dir))
+        tool = tm.check_tool("freshclam")
+        assert tool.installed is True
+        assert "clamav" in str(tool.path)
+
+    def test_freshclam_not_found_without_clamav(self, tmp_tools_dir):
+        tm = ToolManager(tools_dir=str(tmp_tools_dir))
+        tool = tm.check_tool("freshclam")
+        assert tool.installed is False
+
+    def test_clamav_post_download_generates_freshclam_conf(self, tmp_tools_dir):
+        """After ClamAV download, freshclam.conf should be generated."""
+        tm = ToolManager(tools_dir=str(tmp_tools_dir))
+
+        # Simulate extracted ClamAV zip
+        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
+        clamav_dir.mkdir(parents=True)
+        (clamav_dir / "clamscan.exe").write_text("fake")
+        (clamav_dir / "freshclam.exe").write_text("fake")
+
+        tm._post_download_setup("clamav", tmp_tools_dir / "clamav")
+
+        conf = clamav_dir / "freshclam.conf"
+        assert conf.exists()
+        content = conf.read_text()
+        assert "DatabaseDirectory" in content
+        assert "DatabaseMirror" in content
+        assert (clamav_dir / "db").is_dir()
+
+    def test_clamav_post_download_skips_existing_conf(self, tmp_tools_dir):
+        tm = ToolManager(tools_dir=str(tmp_tools_dir))
+
+        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
+        clamav_dir.mkdir(parents=True)
+        (clamav_dir / "freshclam.exe").write_text("fake")
+        existing_conf = clamav_dir / "freshclam.conf"
+        existing_conf.write_text("custom config")
+
+        tm._post_download_setup("clamav", tmp_tools_dir / "clamav")
+
+        assert existing_conf.read_text() == "custom config"
