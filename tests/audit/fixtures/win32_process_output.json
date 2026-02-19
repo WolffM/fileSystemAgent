@@ -1,0 +1,79 @@
+[
+  {
+    "ProcessId": 0,
+    "Name": "System Idle Process",
+    "ExecutablePath": null,
+    "CommandLine": null,
+    "ParentProcessId": 0,
+    "ThreadCount": 16,
+    "HandleCount": 0,
+    "WorkingSetSize": 8192,
+    "CreationDate": "/Date(1708200000000)/"
+  },
+  {
+    "ProcessId": 4,
+    "Name": "System",
+    "ExecutablePath": null,
+    "CommandLine": null,
+    "ParentProcessId": 0,
+    "ThreadCount": 241,
+    "HandleCount": 6521,
+    "WorkingSetSize": 143360,
+    "CreationDate": "/Date(1708200000000)/"
+  },
+  {
+    "ProcessId": 1234,
+    "Name": "svchost.exe",
+    "ExecutablePath": "C:\\Windows\\System32\\svchost.exe",
+    "CommandLine": "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+    "ParentProcessId": 820,
+    "ThreadCount": 12,
+    "HandleCount": 450,
+    "WorkingSetSize": 31457280,
+    "CreationDate": "/Date(1708200100000)/"
+  },
+  {
+    "ProcessId": 5678,
+    "Name": "chrome.exe",
+    "ExecutablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "CommandLine": "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer",
+    "ParentProcessId": 5600,
+    "ThreadCount": 25,
+    "HandleCount": 890,
+    "WorkingSetSize": 524288000,
+    "CreationDate": "/Date(1708201000000)/"
+  },
+  {
+    "ProcessId": 9999,
+    "Name": "suspicious.exe",
+    "ExecutablePath": "C:\\Users\\Admin\\AppData\\Local\\Temp\\suspicious.exe",
+    "CommandLine": "C:\\Users\\Admin\\AppData\\Local\\Temp\\suspicious.exe --connect",
+    "ParentProcessId": 1000,
+    "ThreadCount": 3,
+    "HandleCount": 120,
+    "WorkingSetSize": 15728640,
+    "CreationDate": "/Date(1708202000000)/"
+  },
+  {
+    "ProcessId": 8888,
+    "Name": "bigtool.exe",
+    "ExecutablePath": "C:\\Program Files\\BigTool\\bigtool.exe",
+    "CommandLine": "\"C:\\Program Files\\BigTool\\bigtool.exe\"",
+    "ParentProcessId": 1000,
+    "ThreadCount": 50,
+    "HandleCount": 2000,
+    "WorkingSetSize": 3221225472,
+    "CreationDate": "/Date(1708202000000)/"
+  },
+  {
+    "ProcessId": 7777,
+    "Name": "notepad.exe",
+    "ExecutablePath": "C:\\Windows\\System32\\notepad.exe",
+    "CommandLine": "\"C:\\Windows\\System32\\notepad.exe\" C:\\Users\\Admin\\notes.txt",
+    "ParentProcessId": 4000,
+    "ThreadCount": 4,
+    "HandleCount": 80,
+    "WorkingSetSize": 10485760,
+    "CreationDate": "/Date(1708203000000)/"
+  }
+]

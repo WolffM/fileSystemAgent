@@ -43,13 +43,13 @@ class FileSystemAgent:
             health_check_interval=monitoring_config.get('health_check_interval', 30)
         )
         
-        # Security scanning (optional — initialized if security.enabled)
+        # System audit (optional — initialized if audit.enabled)
         self.tool_manager = None
         self.scan_pipeline = None
-        security_config = self.config_manager.get_section('security')
-        if security_config.get('enabled', False):
-            self._init_security(security_config)
-            self.monitoring.register_security_routes(
+        audit_config = self.config_manager.get_section('audit')
+        if audit_config.get('enabled', False):
+            self._init_audit(audit_config)
+            self.monitoring.register_audit_routes(
                 self.tool_manager, self.scan_pipeline
             )
 
@@ -248,28 +248,28 @@ class FileSystemAgent:
         """Get system alerts"""
         return self.monitoring.get_alerts()
     
-    # Security Scanning
-    def _init_security(self, security_config: dict):
-        """Initialize the security scanning subsystem."""
-        from .security.tool_manager import ToolManager
-        from .security.pipeline import ScanPipeline
+    # System Audit
+    def _init_audit(self, audit_config: dict):
+        """Initialize the system audit subsystem."""
+        from .audit.tool_manager import ToolManager
+        from .audit.pipeline import ScanPipeline
 
         self.tool_manager = ToolManager(
-            tools_dir=security_config.get('tools_dir', './tools'),
-            config=security_config,
+            tools_dir=audit_config.get('tools_dir', './tools'),
+            config=audit_config,
         )
         self.scan_pipeline = ScanPipeline(
             tool_manager=self.tool_manager,
-            config=security_config,
+            config=audit_config,
         )
 
-    async def run_security_scan(self, pipeline_name: str = "daily") -> Optional[dict]:
-        """Run a security scan pipeline."""
+    async def run_audit_scan(self, pipeline_name: str = "daily") -> Optional[dict]:
+        """Run an audit scan pipeline."""
         if not self.scan_pipeline:
-            self.logger.warning("Security scanning not enabled")
+            self.logger.warning("Audit not enabled")
             return None
 
-        from .security.pipeline import ScanPipeline
+        from .audit.pipeline import ScanPipeline
 
         if pipeline_name == "daily":
             config = ScanPipeline.create_daily_pipeline()
@@ -282,8 +282,8 @@ class FileSystemAgent:
         result = await self.scan_pipeline.run_pipeline(config)
         return result.model_dump()
 
-    def get_security_tools(self) -> Optional[dict]:
-        """Get security tool availability status."""
+    def get_audit_tools(self) -> Optional[dict]:
+        """Get audit tool availability status."""
         if not self.tool_manager:
             return None
         tools = self.tool_manager.check_all_tools()
@@ -292,8 +292,8 @@ class FileSystemAgent:
             for name, info in tools.items()
         }
 
-    def get_security_findings(self, limit: int = 50) -> Optional[list]:
-        """Get recent security findings."""
+    def get_audit_findings(self, limit: int = 50) -> Optional[list]:
+        """Get recent audit findings."""
         if not self.scan_pipeline:
             return None
         return [f.model_dump() for f in self.scan_pipeline.get_all_findings(limit)]

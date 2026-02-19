@@ -1,0 +1,56 @@
+[
+  {
+    "TaskName": "WindowsUpdate",
+    "TaskPath": "\\Microsoft\\Windows\\WindowsUpdate\\",
+    "State": 3,
+    "Execute": "C:\\Windows\\System32\\usoclient.exe",
+    "Arguments": "StartScan",
+    "UserId": "SYSTEM",
+    "RunLevel": 1
+  },
+  {
+    "TaskName": "MyBackup",
+    "TaskPath": "\\",
+    "State": 3,
+    "Execute": "D:\\Scripts\\backup.bat",
+    "Arguments": null,
+    "UserId": "Admin",
+    "RunLevel": 1
+  },
+  {
+    "TaskName": "ChromeUpdate",
+    "TaskPath": "\\Google\\",
+    "State": 3,
+    "Execute": "C:\\Program Files\\Google\\Update\\GoogleUpdate.exe",
+    "Arguments": "/c",
+    "UserId": "Hadoku",
+    "RunLevel": 0
+  },
+  {
+    "TaskName": "DisabledTask",
+    "TaskPath": "\\",
+    "State": 1,
+    "Execute": "C:\\Temp\\old_script.exe",
+    "Arguments": null,
+    "UserId": "Admin",
+    "RunLevel": 1
+  },
+  {
+    "TaskName": "SuspiciousTask",
+    "TaskPath": "\\",
+    "State": 3,
+    "Execute": "C:\\Users\\Admin\\AppData\\Local\\Temp\\payload.exe",
+    "Arguments": "--silent",
+    "UserId": "Admin",
+    "RunLevel": 0
+  },
+  {
+    "TaskName": "PowerShellTask",
+    "TaskPath": "\\Custom\\",
+    "State": 4,
+    "Execute": "powershell.exe",
+    "Arguments": "-File C:\\Scripts\\cleanup.ps1",
+    "UserId": "SYSTEM",
+    "RunLevel": 0
+  }
+]

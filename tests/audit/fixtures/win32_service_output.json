@@ -1,0 +1,65 @@
+[
+  {
+    "Name": "wuauserv",
+    "DisplayName": "Windows Update",
+    "State": "Running",
+    "StartMode": "Manual",
+    "PathName": "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+    "StartName": "LocalSystem",
+    "Description": "Enables the detection, download, and installation of updates for Windows."
+  },
+  {
+    "Name": "Spooler",
+    "DisplayName": "Print Spooler",
+    "State": "Running",
+    "StartMode": "Auto",
+    "PathName": "C:\\Windows\\System32\\spoolsv.exe",
+    "StartName": "LocalSystem",
+    "Description": "This service spools print jobs."
+  },
+  {
+    "Name": "VulnSvc",
+    "DisplayName": "Vulnerable Service",
+    "State": "Running",
+    "StartMode": "Auto",
+    "PathName": "C:\\Program Files\\Vulnerable App\\My Service\\service.exe -run",
+    "StartName": "LocalSystem",
+    "Description": "An unquoted path service for testing."
+  },
+  {
+    "Name": "WeirdSvc",
+    "DisplayName": "Weird Location Service",
+    "State": "Running",
+    "StartMode": "Auto",
+    "PathName": "\"D:\\CustomTools\\weird_service.exe\"",
+    "StartName": "NT AUTHORITY\\SYSTEM",
+    "Description": "A service in a non-standard location running as SYSTEM."
+  },
+  {
+    "Name": "SafeSvc",
+    "DisplayName": "Safe Service",
+    "State": "Stopped",
+    "StartMode": "Disabled",
+    "PathName": "\"C:\\Program Files\\SafeApp\\safe.exe\"",
+    "StartName": "NT SERVICE\\SafeSvc",
+    "Description": "A properly quoted, standard-location service."
+  },
+  {
+    "Name": "UserSvc",
+    "DisplayName": "User Service",
+    "State": "Running",
+    "StartMode": "Auto",
+    "PathName": "D:\\MyApps\\user_service.exe",
+    "StartName": "DOMAIN\\serviceaccount",
+    "Description": "A non-SYSTEM service in a non-standard location."
+  },
+  {
+    "Name": "NullPathSvc",
+    "DisplayName": "Null Path Service",
+    "State": "Stopped",
+    "StartMode": "Manual",
+    "PathName": null,
+    "StartName": "LocalSystem",
+    "Description": "A service with no binary path."
+  }
+]

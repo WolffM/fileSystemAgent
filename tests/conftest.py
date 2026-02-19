@@ -23,4 +23,4 @@ def tmp_output_dir(tmp_path):
 @pytest.fixture
 def fixtures_dir():
     """Path to the test fixtures directory."""
-    return Path(__file__).parent / "security" / "fixtures"
+    return Path(__file__).parent / "audit" / "fixtures"

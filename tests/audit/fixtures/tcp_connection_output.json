@@ -1,0 +1,101 @@
+[
+  {
+    "LocalAddress": "0.0.0.0",
+    "LocalPort": 80,
+    "RemoteAddress": "0.0.0.0",
+    "RemotePort": 0,
+    "State": 2,
+    "OwningProcess": 4,
+    "ProcessName": "System"
+  },
+  {
+    "LocalAddress": "0.0.0.0",
+    "LocalPort": 49152,
+    "RemoteAddress": "0.0.0.0",
+    "RemotePort": 0,
+    "State": 2,
+    "OwningProcess": 1200,
+    "ProcessName": "unknown_daemon.exe"
+  },
+  {
+    "LocalAddress": "127.0.0.1",
+    "LocalPort": 8080,
+    "RemoteAddress": "127.0.0.1",
+    "RemotePort": 55000,
+    "State": 5,
+    "OwningProcess": 3000,
+    "ProcessName": "node.exe"
+  },
+  {
+    "LocalAddress": "192.168.1.100",
+    "LocalPort": 55001,
+    "RemoteAddress": "93.184.216.34",
+    "RemotePort": 443,
+    "State": 5,
+    "OwningProcess": 5000,
+    "ProcessName": "chrome.exe"
+  },
+  {
+    "LocalAddress": "192.168.1.100",
+    "LocalPort": 55002,
+    "RemoteAddress": "93.184.216.34",
+    "RemotePort": 443,
+    "State": 5,
+    "OwningProcess": 5000,
+    "ProcessName": "chrome.exe"
+  },
+  {
+    "LocalAddress": "192.168.1.100",
+    "LocalPort": 55003,
+    "RemoteAddress": "192.168.1.1",
+    "RemotePort": 53,
+    "State": 5,
+    "OwningProcess": 1234,
+    "ProcessName": "svchost.exe"
+  },
+  {
+    "LocalAddress": "10.0.0.5",
+    "LocalPort": 55010,
+    "RemoteAddress": "10.0.0.1",
+    "RemotePort": 445,
+    "State": 5,
+    "OwningProcess": 4,
+    "ProcessName": "System"
+  },
+  {
+    "LocalAddress": "192.168.1.100",
+    "LocalPort": 55100,
+    "RemoteAddress": "203.0.113.50",
+    "RemotePort": 8443,
+    "State": 5,
+    "OwningProcess": 6666,
+    "ProcessName": "suspect.exe"
+  },
+  {
+    "LocalAddress": "::1",
+    "LocalPort": 5432,
+    "RemoteAddress": "::1",
+    "RemotePort": 60001,
+    "State": 5,
+    "OwningProcess": 2000,
+    "ProcessName": "postgres.exe"
+  },
+  {
+    "LocalAddress": "::",
+    "LocalPort": 9999,
+    "RemoteAddress": "::",
+    "RemotePort": 0,
+    "State": 2,
+    "OwningProcess": 7000,
+    "ProcessName": "backdoor.exe"
+  },
+  {
+    "LocalAddress": "fe80::1%1",
+    "LocalPort": 55200,
+    "RemoteAddress": "fe80::2%1",
+    "RemotePort": 445,
+    "State": 5,
+    "OwningProcess": 4,
+    "ProcessName": "System"
+  }
+]

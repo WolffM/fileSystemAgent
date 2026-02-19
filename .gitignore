@@ -152,8 +152,8 @@ staging_*/
 # Security tool binaries (downloaded, not checked in)
 /tools/
 
-# Security scan output
-/data/security/
+# Audit output
+/data/audit/
 
 # File system operation output
 file_index.db

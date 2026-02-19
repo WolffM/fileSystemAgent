@@ -25,10 +25,10 @@ monitoring:
   metrics_port: 8080
   health_check_interval: 30
 
-security:
+audit:
   enabled: true
   tools_dir: "./tools"
-  output_dir: "./data/security/scans"
+  output_dir: "./data/audit/scans"
   rules_dir: "./rules"
   tools:
     hollows_hunter:
@@ -47,13 +47,8 @@ security:
       sigma_dir: "./rules/sigma"
     sysmon:
       config_file: "./rules/sysmon/sysmonconfig.xml"
-    autorunsc:
-      install_method: "manual"
     sigcheck:
-      install_method: "manual"
       target_path: "C:\\Windows\\System32"
-    listdlls:
-      install_method: "manual"
   pipeline:
     daily:
       enabled: true

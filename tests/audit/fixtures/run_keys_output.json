@@ -1,0 +1,27 @@
+[
+  {
+    "RegistryPath": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Name": "SecurityHealth",
+    "Value": "C:\\Windows\\system32\\SecurityHealthSystray.exe"
+  },
+  {
+    "RegistryPath": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Name": "RtkAudUService",
+    "Value": "\"C:\\Windows\\System32\\DriverStore\\FileRepository\\realtekservice.inf_amd64_31dd95d009763f70\\RtkAudUService64.exe\" -background"
+  },
+  {
+    "RegistryPath": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Name": "Discord",
+    "Value": "\"C:\\Users\\Admin\\AppData\\Local\\Discord\\Update.exe\" --processStart Discord.exe"
+  },
+  {
+    "RegistryPath": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Name": "RiotClient",
+    "Value": "G:\\Riot Games\\Riot Client\\RiotClientServices.exe --launch-background-mode"
+  },
+  {
+    "RegistryPath": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Name": "Steam",
+    "Value": "\"M:\\Steam\\steam.exe\" -silent"
+  }
+]
