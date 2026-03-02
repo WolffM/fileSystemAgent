@@ -19,7 +19,6 @@ from src.audit.models import (
     ToolInfo,
 )
 from src.audit.tool_manager import ToolManager
-from src.audit.scanners.clamav import ClamAVScanner
 from src.audit.scanners.hollows_hunter import HollowsHunterScanner
 from src.audit.scanners.yara_scanner import YaraScanner
 from src.audit.scanners.hayabusa import HayabusaScanner
@@ -59,51 +58,6 @@ def _make_scan_result(tool_name: str, stdout: str = "", output_files: list = Non
         stdout=stdout,
         output_files=output_files or [],
     )
-
-
-# ---- ClamAV ----
-
-class TestClamAVScanner:
-    def test_parse_output(self, mock_tm, fixtures_dir):
-        scanner = ClamAVScanner(mock_tm, config={"update_before_scan": False})
-        stdout = (fixtures_dir / "clamscan_output.log").read_text()
-        result = _make_scan_result("clamav", stdout=stdout)
-        findings = scanner.parse_output(result)
-
-        assert len(findings) == 3
-        assert findings[0].title == "ClamAV: Eicar-Signature"
-        assert findings[0].severity == SeverityLevel.HIGH
-        assert findings[0].category == "malware_signature"
-        assert "eicar.txt" in findings[0].target
-        assert findings[1].title == "ClamAV: Win.Trojan.Generic-12345"
-        assert findings[2].title == "ClamAV: Win.Malware.Agent-67890"
-
-    def test_parse_no_findings(self, mock_tm):
-        scanner = ClamAVScanner(mock_tm, config={"update_before_scan": False})
-        result = _make_scan_result("clamav", stdout="C:\\clean.txt: OK\n")
-        findings = scanner.parse_output(result)
-        assert findings == []
-
-    def test_success_return_code(self, mock_tm):
-        scanner = ClamAVScanner(mock_tm, config={"update_before_scan": False})
-        # ClamAV returns 1 when malware is found (success, not error)
-        assert scanner._is_success_return_code(1) is True
-        assert scanner._is_success_return_code(0) is False
-
-    def test_build_command(self, mock_tm, tmp_path):
-        scanner = ClamAVScanner(mock_tm, config={"update_before_scan": False})
-        config = ScanConfig(
-            tool_name="clamav",
-            target=ScanTarget(target_type="path", target_value="C:\\Users"),
-        )
-        output_dir = tmp_path / "output"
-        output_dir.mkdir()
-        cmd = scanner.build_command(config, output_dir)
-
-        assert cmd[0].endswith("clamscan.exe")
-        assert "-r" in cmd
-        assert "C:\\Users" in cmd
-        assert any("--log=" in arg for arg in cmd)
 
 
 # ---- HollowsHunter ----

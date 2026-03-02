@@ -132,6 +132,10 @@ class SigcheckScanner(ScannerBase):
         ]
         return cmd
 
+    def _is_success_return_code(self, return_code: Optional[int]) -> bool:
+        # Sigcheck uses non-zero exit codes for various results (e.g. 42 = unsigned found)
+        return return_code is not None and return_code != 0
+
     def parse_output(self, scan_result: ScanResult) -> List[Finding]:
         """Parse sigcheck CSV output for unsigned binaries."""
         findings: List[Finding] = []

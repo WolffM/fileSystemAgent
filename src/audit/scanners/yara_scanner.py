@@ -36,6 +36,16 @@ class YaraScanner(ScannerBase):
         rules_dir = scan_config.extra_args.get("rules_dir", self.rules_dir)
         output_file = output_dir / "yara_results.json"
 
+        # Warn if rules directory has no .yar files
+        rules_path = Path(rules_dir)
+        if rules_path.is_dir():
+            yar_files = list(rules_path.rglob("*.yar")) + list(rules_path.rglob("*.yara"))
+            if not yar_files:
+                logger.warning(
+                    f"YARA rules directory '{rules_dir}' has no .yar/.yara files. "
+                    f"Add YARA rules to get scan results."
+                )
+
         cmd = [exe, "scan", str(rules_dir)]
 
         # Target: path or PID
@@ -44,7 +54,7 @@ class YaraScanner(ScannerBase):
         else:
             cmd.append(scan_config.target.target_value)
 
-        cmd.extend(["--output-format", "json"])
+        cmd.extend(["--output-format", "json", "-w"])
 
         # Recurse into directories
         if scan_config.target.recursive:

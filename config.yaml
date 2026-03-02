@@ -37,11 +37,10 @@ audit:
     yara_x:
       github_repo: "VirusTotal/yara-x"
       rules_dir: "./rules/yara"
-    clamav:
-      update_before_scan: true
     hayabusa:
       github_repo: "Yamato-Security/hayabusa"
       min_level: "medium"
+      evtx_dir: "./data/evtx"
     chainsaw:
       github_repo: "WithSecureLabs/chainsaw"
       sigma_dir: "./rules/sigma"

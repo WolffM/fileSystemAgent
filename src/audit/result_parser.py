@@ -19,8 +19,17 @@ class ResultParser:
     def parse_csv_output(
         text: str, delimiter: str = ","
     ) -> List[Dict[str, str]]:
-        """Parse CSV text into a list of dicts via csv.DictReader."""
-        reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+        """Parse CSV text into a list of dicts via csv.DictReader.
+
+        Normalizes line endings to avoid csv module errors with \\r\\n
+        from Windows tool output.
+        """
+        # Strip BOM and normalize line endings
+        if text.startswith("\ufeff"):
+            text = text[1:]
+        reader = csv.DictReader(
+            io.StringIO(text, newline=""), delimiter=delimiter
+        )
         return list(reader)
 
     @staticmethod

@@ -41,22 +41,6 @@ DEFAULT_TOOLS: list[dict[str, Any]] = [
         "license": "BSD-3-Clause",
     },
     {
-        "name": "clamav",
-        "display_name": "ClamAV",
-        "exe_name": "clamscan.exe",
-        "github_repo": "Cisco-Talos/clamav",
-        "github_asset_pattern": "clamav-*.win.x64.zip",
-        "license": "GPL-2.0",
-    },
-    {
-        "name": "freshclam",
-        "display_name": "FreshClam",
-        "exe_name": "freshclam.exe",
-        "install_method": "shared",
-        "shared_with": "clamav",
-        "license": "GPL-2.0",
-    },
-    {
         "name": "hayabusa",
         "display_name": "Hayabusa",
         "exe_name": "hayabusa.exe",
@@ -370,39 +354,7 @@ class ToolManager:
 
     def _post_download_setup(self, tool_name: str, dest_dir: Path) -> None:
         """Run post-download setup for tools that need configuration files."""
-        if tool_name == "clamav":
-            self._setup_clamav_config(dest_dir)
-
-    def _setup_clamav_config(self, clamav_dir: Path) -> None:
-        """Generate freshclam.conf so freshclam can update virus definitions.
-
-        ClamAV's portable zip ships with a sample config but no usable one.
-        We create a minimal freshclam.conf next to the freshclam.exe with
-        DatabaseDirectory pointing to a 'db' folder alongside the exe.
-        """
-        # Find freshclam.exe to put config next to it
-        freshclam_exe = None
-        for candidate in clamav_dir.rglob("freshclam.exe"):
-            if candidate.is_file():
-                freshclam_exe = candidate
-                break
-        if not freshclam_exe:
-            return
-
-        conf_path = freshclam_exe.parent / "freshclam.conf"
-        if conf_path.exists():
-            logger.debug("freshclam.conf already exists, skipping generation")
-            return
-
-        db_dir = freshclam_exe.parent / "db"
-        db_dir.mkdir(exist_ok=True)
-
-        conf_content = (
-            f"DatabaseDirectory {db_dir}\n"
-            f"DatabaseMirror database.clamav.net\n"
-        )
-        conf_path.write_text(conf_content)
-        logger.info(f"Generated {conf_path}")
+        pass
 
     async def _download_direct_url(self, tool_name: str) -> bool:
         """Download a tool from a direct URL (non-GitHub)."""

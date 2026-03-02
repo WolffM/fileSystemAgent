@@ -1,8 +1,27 @@
 import click
 import asyncio
+import logging
+import sys
 from pathlib import Path
 
 from .agent import FileSystemAgent
+
+
+def _configure_audit_logging(verbose: bool = False) -> None:
+    """Set up logging so audit messages appear on stderr via click.
+
+    Default: WARNING+ only (progress is shown via callbacks).
+    Verbose: INFO+ shows detailed tool commands and output.
+    """
+    level = logging.INFO if verbose else logging.WARNING
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter("  %(message)s"))
+    # Only attach to the audit logger tree
+    audit_logger = logging.getLogger("src.audit")
+    audit_logger.setLevel(level)
+    audit_logger.addHandler(handler)
+    audit_logger.propagate = False
 
 
 @click.group()
@@ -149,12 +168,15 @@ def setup(ctx, force):
 )
 @click.option('--target', '-t', default=None, help='Scan target path')
 @click.option('--dry-run', is_flag=True, help='Show commands without executing')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed tool output')
 @click.pass_context
-def scan(ctx, pipeline, target, dry_run):
+def scan(ctx, pipeline, target, dry_run, verbose):
     """Run an audit scan pipeline"""
     from .audit.tool_manager import ToolManager
     from .audit.pipeline import ScanPipeline
     from .config import ConfigManager
+
+    _configure_audit_logging(verbose)
 
     config_path = ctx.obj['config']
     config_manager = ConfigManager(config_path)
@@ -167,15 +189,18 @@ def scan(ctx, pipeline, target, dry_run):
     sp = ScanPipeline(tool_manager=tm, config=audit_config)
 
     output_dir = audit_config.get('output_dir', './data/audit/scans')
+    hayabusa_config = audit_config.get('tools', {}).get('hayabusa', {})
+    evtx_dir = hayabusa_config.get('evtx_dir', './data/evtx')
 
     if pipeline == 'daily':
         config = ScanPipeline.create_daily_pipeline(
-            scan_target=target or "C:\\Users",
+            scan_target=target or ".",
             output_dir=output_dir,
+            evtx_path=evtx_dir,
         )
     else:
         config = ScanPipeline.create_forensic_pipeline(
-            evtx_path=target or "C:\\Windows\\System32\\winevt\\Logs",
+            evtx_path=target or evtx_dir,
             output_dir=output_dir,
         )
 
@@ -183,35 +208,56 @@ def scan(ctx, pipeline, target, dry_run):
         for step in config.steps:
             step.dry_run = True
 
+    total_steps = (
+        len(config.collectors) + len(config.steps) + len(config.analyzers)
+    )
+    click.echo(f"Pipeline: {config.name} ({total_steps} steps)")
+    if dry_run:
+        click.echo(click.style("  [DRY RUN]", fg="yellow"))
+    click.echo("")
+
     async def do_scan():
-        result = await sp.run_pipeline(config)
+        result = await sp.run_pipeline(
+            config,
+            on_step_start=_on_step_start,
+            on_step_complete=_on_step_complete,
+        )
+
+        # Summary
         click.echo("")
+        click.echo("=" * 60)
         click.echo(f"Pipeline: {result.pipeline_name}")
-        click.echo(f"Status:   {result.status.value}")
+        status_color = "green" if result.status.value == "completed" else "red"
+        click.echo(f"Status:   {click.style(result.status.value, fg=status_color)}")
         if result.duration_seconds is not None:
             click.echo(f"Duration: {result.duration_seconds:.1f}s")
-        click.echo("")
-
-        for sr in result.scan_results:
-            status_color = {
-                "completed": "green",
-                "failed": "red",
-                "skipped": "yellow",
-                "timed_out": "red",
-            }.get(sr.status.value, "white")
-            status_str = click.style(sr.status.value, fg=status_color)
-            click.echo(
-                f"  {sr.tool_name:<20} {status_str}  "
-                f"{sr.findings_count} findings"
-            )
-
-        click.echo("")
         click.echo(
-            f"Total findings: {result.total_findings} "
+            f"Findings: {result.total_findings} "
             f"({result.critical_findings} critical, {result.high_findings} high)"
         )
 
     asyncio.run(do_scan())
+
+
+def _on_step_start(step_num: int, total: int, name: str) -> None:
+    """Callback fired before each pipeline step begins."""
+    running = click.style("running...", fg="cyan")
+    click.echo(f"  [{step_num}/{total}] {name:<25} {running}")
+
+
+def _on_step_complete(step_num: int, total: int, name: str, status: str, findings: int, duration: float) -> None:
+    """Callback fired after each pipeline step completes."""
+    status_color = {
+        "completed": "green",
+        "failed": "red",
+        "skipped": "yellow",
+        "timed_out": "red",
+    }.get(status, "white")
+    status_str = click.style(status.ljust(9), fg=status_color)
+    dur_str = f"{duration:.1f}s" if duration else ""
+    findings_str = f"{findings} findings" if findings else ""
+    detail = "  ".join(filter(None, [dur_str, findings_str]))
+    click.echo(f"  [{step_num}/{total}] {name:<25} {status_str}  {detail}")
 
 
 @audit.command()
@@ -287,6 +333,8 @@ def process_scan(ctx, report, dry_run):
     from .audit.reporting.html_report import HtmlReportGenerator
     from .config import ConfigManager
 
+    _configure_audit_logging()
+
     config_path = ctx.obj['config']
     config_manager = ConfigManager(config_path)
     audit_config = config_manager.get_section('audit')
@@ -320,25 +368,25 @@ def process_scan(ctx, report, dry_run):
             click.echo(f"  - {a.analyzer_name}")
         return
 
+    total_steps = (
+        len(pipeline_config.collectors)
+        + len(pipeline_config.steps)
+        + len(pipeline_config.analyzers)
+    )
+    click.echo(f"Pipeline: {pipeline_config.name} ({total_steps} steps)")
+    click.echo("")
+
     async def do_scan():
-        click.echo(f"Running pipeline: {pipeline_config.name}")
-        click.echo(f"  {len(pipeline_config.collectors)} collectors, "
-                    f"{len(pipeline_config.steps)} scanners, "
-                    f"{len(pipeline_config.analyzers)} analyzers")
-        click.echo("")
-
-        result = await sp.run_pipeline(pipeline_config)
-
-        # Print step results
-        for cr in result.collector_results:
-            _print_step_result("Collector", cr.collector_name, cr.status, cr.findings_count)
-        for sr in result.scan_results:
-            _print_step_result("Scanner", sr.tool_name, sr.status, sr.findings_count)
-        for ar in result.analyzer_results:
-            _print_step_result("Analyzer", ar.analyzer_name, ar.status, ar.findings_count)
+        result = await sp.run_pipeline(
+            pipeline_config,
+            on_step_start=_on_step_start,
+            on_step_complete=_on_step_complete,
+        )
 
         click.echo("")
-        click.echo(f"Status:   {result.status.value}")
+        click.echo("=" * 60)
+        status_color = "green" if result.status.value == "completed" else "red"
+        click.echo(f"Status:   {click.style(result.status.value, fg=status_color)}")
         if result.duration_seconds is not None:
             click.echo(f"Duration: {result.duration_seconds:.1f}s")
         click.echo(

@@ -184,7 +184,8 @@ class ScannerBase(ABC):
         try:
             result.findings = self.parse_output(result)
         except Exception as e:
-            self.logger.error(f"Failed to parse {self.tool_name} output: {e}", exc_info=True)
+            self.logger.warning(f"Failed to parse {self.tool_name} output: {e}")
+            self.logger.debug("Parse error traceback:", exc_info=True)
             # Don't fail the whole scan — raw output is still captured
             result.findings = []
 

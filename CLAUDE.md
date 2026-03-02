@@ -20,13 +20,15 @@ python main.py --mcp start          # With MCP enabled
 python main.py --no-mcp start       # Without MCP
 python main.py config show          # Show config
 
-# Security scanning
-python main.py security check       # Show tool availability
-python main.py security setup       # Download tools from GitHub
-python main.py security scan        # Run daily scan pipeline
-python main.py security scan -p forensic  # Run forensic triage
-python main.py security scan --dry-run    # Preview commands
-python main.py security findings    # Show recent findings
+# Audit / security scanning
+python main.py audit check          # Show tool availability
+python main.py audit setup          # Download tools from GitHub
+python main.py audit scan           # Run daily scan pipeline
+python main.py audit scan -p forensic  # Run forensic triage
+python main.py audit scan --dry-run    # Preview commands
+python main.py audit findings       # Show recent findings
+python main.py audit baseline       # Manage audit baselines
+python main.py audit process-scan   # Run collectors + analyzers pipeline
 
 # Monitoring (when agent is running)
 curl http://localhost:8080/health
@@ -37,35 +39,52 @@ curl http://localhost:8080/security/scans
 curl http://localhost:8080/security/findings
 
 # Tests
-python -m pytest tests/security/ -v
+python -m pytest tests/audit/ -v
 ```
 
 ## Architecture
 
 ### Core
-- `src/agent.py` - Main orchestrator, coordinates ETL + scheduler + monitoring + security
+- `src/agent.py` - Main orchestrator, coordinates ETL + scheduler + monitoring + audit
 - `src/agent_mcp.py` - MCP variant, inherits from FileSystemAgent
 - `src/etl.py` / `src/etl_mcp.py` - ETL engine (CSV, JSON, XML, Parquet, Excel)
 - `src/scheduler.py` / `src/scheduler_mcp.py` - Cron/interval job scheduler
 - `src/monitoring.py` - FastAPI REST API for metrics, health, and security endpoints
 - `src/config.py` - YAML config with `FSA_` env var overrides
 - `src/models.py` - Pydantic data models (ETLJob, ScheduledJob, etc.)
-- `src/cli.py` - Click CLI (start, config show, security check/setup/scan/findings)
+- `src/cli.py` - Click CLI (start, config show, audit check/setup/scan/findings/baseline/process-scan)
 
-### Security Scanning (`src/security/`)
-- `src/security/models.py` - Pydantic models: ToolInfo, Finding, ScanResult, PipelineResult
-- `src/security/tool_manager.py` - Tool binary discovery, verification, GitHub download
-- `src/security/scanner_base.py` - Abstract base class (template method: build_command + parse_output)
-- `src/security/pipeline.py` - Multi-tool scan orchestration with factory methods
-- `src/security/result_parser.py` - Shared CSV/JSON/text parsing utilities
-- `src/security/security_monitor.py` - FastAPI routes for /security/* endpoints
-- `src/security/scanners/clamav.py` - ClamAV (freshclam + clamscan)
-- `src/security/scanners/hollows_hunter.py` - HollowsHunter process implant scanning
-- `src/security/scanners/yara_scanner.py` - YARA-X pattern matching
-- `src/security/scanners/hayabusa.py` - Hayabusa event log threat hunting
-- `src/security/scanners/chainsaw.py` - Chainsaw forensic triage
-- `src/security/scanners/sysinternals.py` - autorunsc, sigcheck, listdlls
-- `src/security/scanners/sysmon.py` - Sysmon install/config manager
+### Audit System (`src/audit/`)
+
+#### Scanning
+- `src/audit/models.py` - Pydantic models: ToolInfo, Finding, ScanResult, PipelineResult
+- `src/audit/tool_manager.py` - Tool binary discovery, verification, GitHub download
+- `src/audit/scanner_base.py` - Abstract base class (template method: build_command + parse_output)
+- `src/audit/pipeline.py` - Multi-tool scan orchestration with factory methods
+- `src/audit/result_parser.py` - Shared CSV/JSON/text parsing utilities
+- `src/audit/monitor.py` - FastAPI routes for /security/* endpoints
+
+#### Scanners (`src/audit/scanners/`)
+- `clamav.py` - ClamAV (freshclam + clamscan)
+- `hollows_hunter.py` - HollowsHunter process implant scanning
+- `yara_scanner.py` - YARA-X pattern matching
+- `hayabusa.py` - Hayabusa event log threat hunting
+- `chainsaw.py` - Chainsaw forensic triage
+- `sysinternals.py` - autorunsc, sigcheck, listdlls
+- `sysmon.py` - Sysmon install/config manager
+
+#### Collectors (`src/audit/collectors/`)
+- `process_snapshot.py` - Running process enumeration
+- `network_mapper.py` - Network connection mapping
+- `service_auditor.py` - Windows service auditing
+- `persistence_auditor.py` - Persistence mechanism detection
+
+#### Analyzers (`src/audit/analyzers/`)
+- `resource_analyzer.py` - CPU/memory/disk resource analysis
+- `baseline_differ.py` - Diff current state against saved baselines
+
+#### Reporting (`src/audit/reporting/`)
+- `html_report.py` - HTML report generation from scan/audit results
 
 ### File Management
 - `src/template_models.py` - File migration/indexing config models
@@ -76,17 +95,18 @@ python -m pytest tests/security/ -v
 - `src/mcp_server.py` / `src/mcp_client.py` - MCP protocol layer
 
 ### Supporting Files
-- `config.yaml` - Full configuration (agent, etl, scheduler, monitoring, security, mcp)
+- `config.yaml` - Full configuration (agent, etl, scheduler, monitoring, audit, mcp)
 - `rules/yara/` - YARA rule files
 - `rules/sigma/` - Sigma detection rules (for Hayabusa/Chainsaw)
 - `rules/sysmon/` - Sysmon XML configs
-- `tools/` - Tool binaries (gitignored, populated by `security setup`)
-- `tests/security/` - pytest suite with mock fixtures
+- `tools/` - Tool binaries (gitignored, populated by `audit setup`)
+- `tests/audit/` - pytest suite (438+ tests) with mock fixtures
 
 ## Key Patterns
 
 - External tools run as **async subprocesses** via `asyncio.create_subprocess_exec`
 - Scanner abstraction: `build_command()` + `parse_output()` per tool, `run()` template method handles lifecycle
+- Collector abstraction: `collect()` gathers system state, analyzers compare against baselines
 - Tool resolution: config path > `tools/<name>/` dir > system PATH
 - All models use Pydantic v2 (`model_dump()`, `field_validator`, `ConfigDict`)
 - Transform scripts use env vars (`TRANSFORM_DATA_PATH`, `TRANSFORM_RESULT_PATH`, `TRANSFORM_PARAMS`)
@@ -94,6 +114,6 @@ python -m pytest tests/security/ -v
 
 ## Development
 
-- Developed in WSL, tested on Windows native Python
-- Test framework: pytest + pytest-asyncio (105 tests)
-- Commits serve as checkpoint/restore system
+- Target platform: Windows (native Python)
+- Test framework: pytest + pytest-asyncio (438+ tests)
+- Known issue: `test_e2e_collectors.py` hangs under pytest due to Windows asyncio subprocess incompatibility; collectors work correctly from the agent/CLI

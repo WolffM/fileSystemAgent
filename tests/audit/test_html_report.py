@@ -434,7 +434,7 @@ class TestProcessScanPipelineFactory:
         from src.audit.pipeline import ScanPipeline
         daily = ScanPipeline.create_daily_pipeline()
         assert daily.name == "daily_scan"
-        assert len(daily.steps) == 7
+        assert len(daily.steps) == 6
         assert daily.collectors == []
 
         forensic = ScanPipeline.create_forensic_pipeline()

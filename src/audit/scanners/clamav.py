@@ -44,7 +44,7 @@ class ClamAVScanner(ScannerBase):
         cmd.append(f"--log={log_file}")
 
         # Point clamscan to the database directory populated by freshclam
-        db_dir = exe_path.parent / "db"
+        db_dir = exe_path.parent / "database"
         if db_dir.is_dir():
             cmd.append(f"--database={db_dir}")
 
@@ -104,12 +104,11 @@ class ClamAVScanner(ScannerBase):
         # Build freshclam command with config-file if it exists next to the exe
         cmd = [str(freshclam_path)]
         conf_path = freshclam_path.parent / "freshclam.conf"
+        db_dir = freshclam_path.parent / "database"
+        # Ensure database directory exists before freshclam tries to write to it
+        db_dir.mkdir(exist_ok=True)
         if conf_path.is_file():
             cmd.extend(["--config-file", str(conf_path)])
-            # Also pass --datadir so clamscan can find the downloaded databases
-            db_dir = freshclam_path.parent / "db"
-            if db_dir.is_dir():
-                cmd.extend(["--datadir", str(db_dir)])
 
         self.logger.info("Updating ClamAV signatures via freshclam...")
         try:

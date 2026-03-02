@@ -248,15 +248,27 @@ class TestPipelineFactories:
     def test_daily_pipeline(self):
         config = ScanPipeline.create_daily_pipeline()
         assert config.name == "daily_scan"
-        assert len(config.steps) == 7
+        assert len(config.steps) == 6
         tool_names = [s.tool_name for s in config.steps]
-        assert "clamav" in tool_names
         assert "yara_x" in tool_names
         assert "hollows_hunter" in tool_names
         assert "hayabusa" in tool_names
         assert "autorunsc" in tool_names
         assert "sigcheck" in tool_names
         assert "listdlls" in tool_names
+
+    def test_daily_pipeline_hayabusa_uses_offline_evtx(self):
+        config = ScanPipeline.create_daily_pipeline()
+        hayabusa_step = [s for s in config.steps if s.tool_name == "hayabusa"][0]
+        assert hayabusa_step.target.target_type == "eventlog"
+        # Should use offline evtx path, not "live" (which requires admin)
+        assert hayabusa_step.target.target_value != "live"
+        assert hayabusa_step.target.target_value == "./data/evtx"
+
+    def test_daily_pipeline_custom_evtx_path(self):
+        config = ScanPipeline.create_daily_pipeline(evtx_path="D:\\logs\\evtx")
+        hayabusa_step = [s for s in config.steps if s.tool_name == "hayabusa"][0]
+        assert hayabusa_step.target.target_value == "D:\\logs\\evtx"
 
     def test_forensic_pipeline(self):
         config = ScanPipeline.create_forensic_pipeline()

@@ -57,6 +57,14 @@ class HayabusaScanner(ScannerBase):
         """Parse Hayabusa CSV timeline output."""
         findings: List[Finding] = []
 
+        # Hayabusa returns exit 0 even when it fails (e.g. needs admin for -l).
+        # Check stderr for known errors and log a warning.
+        if scan_result.stderr and "needs to be run as administrator" in scan_result.stderr.lower():
+            logger.warning(
+                "Hayabusa: live analysis requires Administrator. "
+                "Run this tool as admin or use offline evtx analysis."
+            )
+
         # Find the output CSV file
         csv_file = None
         for f in scan_result.output_files:

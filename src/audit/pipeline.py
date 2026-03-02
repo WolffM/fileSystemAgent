@@ -23,7 +23,6 @@ from .models import (
     SeverityLevel,
 )
 from .scanner_base import ScannerBase
-from .scanners.clamav import ClamAVScanner
 from .scanners.hollows_hunter import HollowsHunterScanner
 from .scanners.yara_scanner import YaraScanner
 from .scanners.hayabusa import HayabusaScanner
@@ -66,7 +65,6 @@ class ScanPipeline:
         """Instantiate all scanner classes."""
         tools_config = self.config.get("tools", {})
         self._scanners = {
-            "clamav": ClamAVScanner(self.tool_manager, tools_config.get("clamav", {})),
             "hollows_hunter": HollowsHunterScanner(
                 self.tool_manager, tools_config.get("hollows_hunter", {})
             ),
@@ -123,13 +121,24 @@ class ScanPipeline:
         """Get analyzer by name."""
         return self._analyzers.get(name)
 
-    async def run_pipeline(self, pipeline_config: PipelineConfig) -> PipelineResult:
+    async def run_pipeline(
+        self,
+        pipeline_config: PipelineConfig,
+        on_step_start: Optional[callable] = None,
+        on_step_complete: Optional[callable] = None,
+    ) -> PipelineResult:
         """Execute a pipeline in staged order: collectors → scanners → analyzers.
 
         Runs each stage in order. Within a stage, steps run sequentially.
         If stop_on_failure is True, stops on the first failure.
         Skips tools/collectors that aren't registered.
         Results are persisted to disk after completion.
+
+        Args:
+            pipeline_config: The pipeline to execute.
+            on_step_start: Optional callback(step_num, total, name) called before each step.
+            on_step_complete: Optional callback(step_num, total, name, status, findings, duration)
+                              called after each step completes.
         """
         result = PipelineResult(
             pipeline_name=pipeline_config.name,
@@ -149,6 +158,14 @@ class ScanPipeline:
             f"{len(pipeline_config.steps)} scanners, "
             f"{len(pipeline_config.analyzers)} analyzers)"
         )
+
+        def _notify_start(step_num: int, name: str) -> None:
+            if on_step_start:
+                on_step_start(step_num, total_steps, name)
+
+        def _notify_complete(step_num: int, name: str, status: str, findings: int, duration: float) -> None:
+            if on_step_complete:
+                on_step_complete(step_num, total_steps, name, status, findings, duration)
 
         # Shared context for data flow between stages
         context: Dict[str, Any] = {}
@@ -173,19 +190,19 @@ class ScanPipeline:
                     ),
                 )
                 result.collector_results.append(skip_result)
+                _notify_complete(step_num, collector_config.collector_name, "skipped", 0, 0)
                 continue
 
-            logger.info(
-                f"Step {step_num}/{total_steps}: "
-                f"Running collector {collector_config.collector_name}..."
-            )
+            _notify_start(step_num, collector_config.collector_name)
             collector_result = await collector.run(collector_config, context)
             result.collector_results.append(collector_result)
 
-            logger.info(
-                f"Step {step_num}: {collector_config.collector_name} -> "
-                f"{collector_result.status.value} "
-                f"({collector_result.findings_count} findings)"
+            _notify_complete(
+                step_num,
+                collector_config.collector_name,
+                collector_result.status.value,
+                collector_result.findings_count,
+                collector_result.duration_seconds or 0,
             )
 
             if (
@@ -214,19 +231,19 @@ class ScanPipeline:
                         ),
                     )
                     result.scan_results.append(skip_result)
+                    _notify_complete(step_num, step_config.tool_name, "skipped", 0, 0)
                     continue
 
-                logger.info(
-                    f"Step {step_num}/{total_steps}: "
-                    f"Running {step_config.tool_name}..."
-                )
+                _notify_start(step_num, step_config.tool_name)
                 scan_result = await scanner.run(step_config)
                 result.scan_results.append(scan_result)
 
-                logger.info(
-                    f"Step {step_num}: {step_config.tool_name} -> "
-                    f"{scan_result.status.value} "
-                    f"({scan_result.findings_count} findings)"
+                _notify_complete(
+                    step_num,
+                    step_config.tool_name,
+                    scan_result.status.value,
+                    scan_result.findings_count,
+                    scan_result.duration_seconds or 0,
                 )
 
                 if (
@@ -255,19 +272,19 @@ class ScanPipeline:
                         ),
                     )
                     result.analyzer_results.append(skip_result)
+                    _notify_complete(step_num, analyzer_config.analyzer_name, "skipped", 0, 0)
                     continue
 
-                logger.info(
-                    f"Step {step_num}/{total_steps}: "
-                    f"Running analyzer {analyzer_config.analyzer_name}..."
-                )
+                _notify_start(step_num, analyzer_config.analyzer_name)
                 analyzer_result = await analyzer.run(analyzer_config, context)
                 result.analyzer_results.append(analyzer_result)
 
-                logger.info(
-                    f"Step {step_num}: {analyzer_config.analyzer_name} -> "
-                    f"{analyzer_result.status.value} "
-                    f"({analyzer_result.findings_count} findings)"
+                _notify_complete(
+                    step_num,
+                    analyzer_config.analyzer_name,
+                    analyzer_result.status.value,
+                    analyzer_result.findings_count,
+                    analyzer_result.duration_seconds or 0,
                 )
 
                 if (
@@ -379,69 +396,75 @@ class ScanPipeline:
 
     @staticmethod
     def create_daily_pipeline(
-        scan_target: str = "C:\\Users",
+        scan_target: str = ".",
         output_dir: str = "./data/audit/scans",
+        evtx_path: str = "./data/evtx",
     ) -> PipelineConfig:
         """Create the standard daily scan pipeline.
 
-        Layer 2 from the research doc: the 8-step scheduled scan.
+        Designed to complete in under 5 minutes with no arguments.
+        System-wide tools (HollowsHunter, Autoruns, ListDLLs) scan the whole
+        system. Hayabusa scans Windows event logs offline (no admin required).
+        Path-based tools (YARA, Sigcheck) scan the working directory by
+        default — pass scan_target to override.
+
+        Args:
+            evtx_path: Directory containing .evtx files for offline Hayabusa
+                analysis. Defaults to ./data/evtx (copy logs there once as
+                admin, then scan without elevation).
         """
         return PipelineConfig(
             name="daily_scan",
-            description="Standard daily scan: ClamAV, YARA, HollowsHunter, "
-                        "Hayabusa, Autoruns, Sigcheck, ListDLLs",
+            description="Daily scan: YARA, HollowsHunter, Hayabusa, "
+                        "Autoruns, Sigcheck, ListDLLs",
             steps=[
-                # 1. ClamAV signature scan
-                ScanConfig(
-                    tool_name="clamav",
-                    target=ScanTarget(target_type="path", target_value=scan_target),
-                    output_dir=output_dir,
-                    timeout=1800,  # 30 min for full scan
-                ),
-                # 2. YARA pattern scan
+                # 1. YARA pattern scan
                 ScanConfig(
                     tool_name="yara_x",
                     target=ScanTarget(target_type="path", target_value=scan_target),
                     output_dir=output_dir,
-                    timeout=1800,
+                    timeout=120,
                 ),
-                # 3. HollowsHunter process scan
+                # 2. HollowsHunter process scan
                 ScanConfig(
                     tool_name="hollows_hunter",
                     target=ScanTarget(target_type="system", target_value=""),
                     output_dir=output_dir,
-                    timeout=600,
+                    timeout=120,
                 ),
-                # 4. Hayabusa live event log analysis
+                # 3. Hayabusa event log analysis (offline — no admin required)
                 ScanConfig(
                     tool_name="hayabusa",
-                    target=ScanTarget(target_type="eventlog", target_value="live"),
+                    target=ScanTarget(
+                        target_type="eventlog",
+                        target_value=evtx_path,
+                    ),
                     output_dir=output_dir,
-                    timeout=600,
+                    timeout=120,
                 ),
-                # 5. Autoruns persistence audit
+                # 4. Autoruns persistence audit
                 ScanConfig(
                     tool_name="autorunsc",
                     target=ScanTarget(target_type="system", target_value=""),
                     output_dir=output_dir,
-                    timeout=300,
+                    timeout=60,
                 ),
-                # 6. Sigcheck unsigned binary detection
+                # 5. Sigcheck unsigned binary detection
                 ScanConfig(
                     tool_name="sigcheck",
                     target=ScanTarget(
                         target_type="path",
-                        target_value="C:\\Windows\\System32",
+                        target_value=scan_target,
                     ),
                     output_dir=output_dir,
-                    timeout=600,
+                    timeout=120,
                 ),
-                # 7. ListDLLs unsigned DLL detection
+                # 6. ListDLLs unsigned DLL detection
                 ScanConfig(
                     tool_name="listdlls",
                     target=ScanTarget(target_type="system", target_value=""),
                     output_dir=output_dir,
-                    timeout=300,
+                    timeout=120,
                 ),
             ],
         )
@@ -489,7 +512,7 @@ class ScanPipeline:
 
     @staticmethod
     def create_forensic_pipeline(
-        evtx_path: str = "C:\\Windows\\System32\\winevt\\Logs",
+        evtx_path: str = "./data/evtx",
         output_dir: str = "./data/audit/scans",
     ) -> PipelineConfig:
         """Create a Layer 3 forensic triage pipeline.

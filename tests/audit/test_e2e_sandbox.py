@@ -362,8 +362,8 @@ class TestPipelineE2E:
             name="test_skip_missing",
             steps=[
                 ScanConfig(
-                    tool_name="clamav",  # Not installed in empty dir
-                    target=ScanTarget(target_type="path", target_value=str(SANDBOX_DIR)),
+                    tool_name="hollows_hunter",  # Not installed in empty dir
+                    target=ScanTarget(target_type="system", target_value=""),
                     output_dir=str(output_dir),
                     timeout=10,
                 ),

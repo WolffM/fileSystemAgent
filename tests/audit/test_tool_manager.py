@@ -99,13 +99,13 @@ class TestToolManagerResolution:
             tm.get_tool_path("hollows_hunter")
 
     def test_get_tool_path_returns_path_when_found(self, tmp_tools_dir):
-        tool_dir = tmp_tools_dir / "clamav"
+        tool_dir = tmp_tools_dir / "hayabusa"
         tool_dir.mkdir()
-        exe = tool_dir / "clamscan.exe"
+        exe = tool_dir / "hayabusa.exe"
         exe.write_text("fake")
 
         tm = ToolManager(tools_dir=str(tmp_tools_dir))
-        path = tm.get_tool_path("clamav")
+        path = tm.get_tool_path("hayabusa")
         assert path == exe.resolve()
 
     def test_check_all_tools(self, tmp_tools_dir):
@@ -119,7 +119,6 @@ class TestToolManagerResolution:
 
         assert results["hayabusa"].installed is True
         assert results["hollows_hunter"].installed is False
-        assert results["clamav"].installed is False
 
 
 class TestToolManagerIntegrity:
@@ -178,19 +177,6 @@ class TestToolManagerInstallMethods:
             assert method != "msi", (
                 f"{tool_def['name']} still has install_method='msi'"
             )
-
-    def test_clamav_is_github_release(self, tmp_tools_dir):
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-        info = tm.get_tool_info("clamav")
-        assert info.install_method == "github_release"
-        assert info.github_repo == "Cisco-Talos/clamav"
-        assert info.github_asset_pattern is not None
-
-    def test_freshclam_is_shared_with_clamav(self, tmp_tools_dir):
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-        info = tm.get_tool_info("freshclam")
-        assert info.install_method == "shared"
-        assert info.shared_with == "clamav"
 
     def test_sysinternals_are_direct_url(self, tmp_tools_dir):
         tm = ToolManager(tools_dir=str(tmp_tools_dir))
@@ -323,54 +309,3 @@ class TestDownloadDirectUrl:
         assert results["sigcheck"] is True
 
 
-class TestSharedTools:
-
-    def test_freshclam_resolves_from_clamav_dir(self, tmp_tools_dir):
-        """freshclam.exe lives inside tools/clamav/, not tools/freshclam/."""
-        # Create clamav dir with both exes (as the real zip would)
-        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
-        clamav_dir.mkdir(parents=True)
-        (clamav_dir / "clamscan.exe").write_text("fake")
-        (clamav_dir / "freshclam.exe").write_text("fake")
-
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-        tool = tm.check_tool("freshclam")
-        assert tool.installed is True
-        assert "clamav" in str(tool.path)
-
-    def test_freshclam_not_found_without_clamav(self, tmp_tools_dir):
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-        tool = tm.check_tool("freshclam")
-        assert tool.installed is False
-
-    def test_clamav_post_download_generates_freshclam_conf(self, tmp_tools_dir):
-        """After ClamAV download, freshclam.conf should be generated."""
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-
-        # Simulate extracted ClamAV zip
-        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
-        clamav_dir.mkdir(parents=True)
-        (clamav_dir / "clamscan.exe").write_text("fake")
-        (clamav_dir / "freshclam.exe").write_text("fake")
-
-        tm._post_download_setup("clamav", tmp_tools_dir / "clamav")
-
-        conf = clamav_dir / "freshclam.conf"
-        assert conf.exists()
-        content = conf.read_text()
-        assert "DatabaseDirectory" in content
-        assert "DatabaseMirror" in content
-        assert (clamav_dir / "db").is_dir()
-
-    def test_clamav_post_download_skips_existing_conf(self, tmp_tools_dir):
-        tm = ToolManager(tools_dir=str(tmp_tools_dir))
-
-        clamav_dir = tmp_tools_dir / "clamav" / "clamav-1.5.1.win.x64"
-        clamav_dir.mkdir(parents=True)
-        (clamav_dir / "freshclam.exe").write_text("fake")
-        existing_conf = clamav_dir / "freshclam.conf"
-        existing_conf.write_text("custom config")
-
-        tm._post_download_setup("clamav", tmp_tools_dir / "clamav")
-
-        assert existing_conf.read_text() == "custom config"
