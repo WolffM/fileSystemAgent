@@ -1,7 +1,7 @@
 ## Steps to reproduce
 
 1. Install Bandit in the environment (`pip install bandit`) if it is not already available.
-2. From the repository root, run `~/.local/bin/bandit -r src/scheduler.py`.
+2. From the repository root, run `python -m bandit -r src/scheduler.py`.
 3. Inspect the reported findings for `src/scheduler.py`.
 4. Observe the process launch line in `_execute_job`, where the command was previously `['python', str(script_path)]`.
 
