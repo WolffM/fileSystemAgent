@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 import asyncio
 import logging
 import subprocess
@@ -147,6 +148,8 @@ class JobScheduler:
             return
         
         try:
+            python_executable = os.path.abspath(sys.executable)
+
             # Prepare environment variables
             env = {
                 **dict(os.environ),
@@ -157,7 +160,7 @@ class JobScheduler:
             
             # Execute the script
             process = subprocess.Popen(
-                ['python', str(script_path)],
+                [python_executable, str(script_path)],
                 cwd=str(self.scripts_dir),
                 env=env,
                 stdout=subprocess.PIPE,
