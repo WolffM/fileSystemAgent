@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 from unittest.mock import MagicMock, patch
 
 from src.models import ScheduleType, ScheduledJob
@@ -31,3 +32,7 @@ class TestJobScheduler:
         assert mocked_popen.called
         command = mocked_popen.call_args.args[0]
         assert command[0] == os.path.abspath(sys.executable)
+        assert command[1] == str(script_file)
+        assert mocked_popen.call_args.kwargs["cwd"] == str(scripts_dir)
+        assert mocked_popen.call_args.kwargs["stdout"] == subprocess.PIPE
+        assert mocked_popen.call_args.kwargs["stderr"] == subprocess.PIPE
