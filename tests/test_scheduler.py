@@ -8,8 +8,21 @@ from src.scheduler import JobScheduler
 
 class _DummyProcess:
     pid = 1234
+    returncode = None
 
     def poll(self):
+        return None
+
+    def wait(self, timeout=None):
+        return 0
+
+    def communicate(self):
+        return b"", b""
+
+    def terminate(self):
+        return None
+
+    def kill(self):
         return None
 
 
@@ -40,3 +53,7 @@ async def test_execute_job_uses_absolute_python_executable(tmp_path, monkeypatch
 
     assert captured["cmd"][0] == sys.executable
     assert captured["cmd"][1] == str(script_file)
+    assert captured["kwargs"]["cwd"] == str(tmp_path)
+    assert captured["kwargs"]["env"]["JOB_ID"] == job.id
+    assert captured["kwargs"]["env"]["JOB_NAME"] == job.name
+    assert captured["kwargs"]["env"]["JOB_PARAMS"] == '{"k": "v"}'
