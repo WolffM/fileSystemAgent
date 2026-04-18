@@ -3,6 +3,7 @@ import json
 import asyncio
 import logging
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
@@ -157,7 +158,7 @@ class JobScheduler:
             
             # Execute the script
             process = subprocess.Popen(
-                ['python', str(script_path)],
+                [sys.executable, str(script_path)],
                 cwd=str(self.scripts_dir),
                 env=env,
                 stdout=subprocess.PIPE,
